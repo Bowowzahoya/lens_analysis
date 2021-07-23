@@ -71,24 +71,14 @@ def join_cols(df, func_d):
         sr[col_out] = func(df[col])
     return sr
 
-def contains_word(string, series_of_words):
+def contains_word(word, str_sr):
     """
-    Fast method to check if any of a series of words is contained
-    exactly in a string
-    That is: series_of_words=[ai], string=air pressure will return False, 
-    but series_of_words=[ai], str_sr=responsible ai, will return True
+    Fast method to check if exactly whole word 'word' is contained in 'str_sr'
+    That is: word=ai, str_sr=air pressure will return False, 
+    but word=ai, str_sr=responsible ai, will return True
     """
-    string = " "+string+" "
-    series_of_words = " "+series_of_words+" "
-    return series_of_words.apply(lambda x: x in string).any()
-
-def ends_on_word(string, series_of_words):
-    """
-    Fast method to check if a string ends with any in a series of words
-    """
-    string = " "+string
-    series_of_words = " "+series_of_words
-    return series_of_words.apply(lambda x: \
-                                 x == string[-min(len(string), len(x)):]).any()
+    word = " "+word+" "
+    str_sr = " "+str_sr+" "
+    return str_sr.apply(lambda x: x in word).any()
 
     
