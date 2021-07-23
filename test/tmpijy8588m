@@ -1,0 +1,67 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Mar  1 13:30:01 2021
+
+@author: David
+"""
+
+import unittest
+from context import lens_analysis
+from lens_analysis import applicants as ap
+from collections import defaultdict
+import pandas as pd
+
+FOLD = "res/"
+
+@unittest.skip
+class TestMerge(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.fam = pd.read_excel(FOLD+"fam_mcov.xlsx")
+        print(cls.fam)
+
+    def testMergeToApplicants(self):
+        apps = ap.merge_to_applicants(self.fam)
+        print(apps)
+        
+        apps.to_excel("apps.xlsx")
+        
+    def testGetAllApps(self):
+        apps = ap._get_all_apps(self.fam[ap.APP_COL])
+        assert apps['WINDWISDEM CORP'] == [995]
+        
+
+class TestAlias(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.fam = pd.read_excel(FOLD+"fam_mcov.xlsx")
+        cls.alias_d = {"SZ DJI TECHNOLOGY CO LTD":"DJI",
+                       "エスゼット ディージェイアイ テクノロジー カンパニー リミテッドＳＺ ＤＪＩ ＴＥＣＨＮＯＬＯＧＹ ＣＯ．，ＬＴＤ":"DJI",
+                       "DJI-INNOVATIONS":"DJI"}
+        print(cls.fam)
+
+    @unittest.skip
+    def testAliasSingleApps(self):
+        apps = "SZ DJI TECHNOLOGY CO LTD;;エスゼット ディージェイアイ テクノロジー カンパニー リミテッドＳＺ ＤＪＩ ＴＥＣＨＮＯＬＯＧＹ ＣＯ．，ＬＴＤ"
+        self.alias_d = defaultdict(lambda x: x, self.alias_d)
+        apps = ap._alias_single_apps(apps, self.alias_d)
+        assert apps == "DJI"
+        
+    def testAliasApps(self):
+        aliases = ap._alias_single_apps(self.fam["Applicants"], self.alias_d)
+        print(aliases)
+        self.fam["Aliases"] = aliases
+        self.fam.to_excel("fam_aliases.xlsx")
+
+        
+    @unittest.skip
+    def testGetAllApps(self):
+        apps = ap._get_all_apps(self.fam[ap.APP_COL])
+        assert apps['WINDWISDEM CORP'] == [995]
+        
+        
+        
+    
+    
+if __name__ == '__main__':
+    unittest.main()

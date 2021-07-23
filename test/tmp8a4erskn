@@ -1,0 +1,29 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Mar  1 13:30:01 2021
+
+@author: David
+"""
+
+import unittest
+from context import lens_analysis
+from lens_analysis import market_cov as mc
+import pandas as pd
+
+FOLD = "res/"
+
+
+class TestFuncs(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.fam = pd.read_excel(FOLD+"fam.xlsx")
+
+    def testCalcMncs(self):
+        fam = ct.calc_mncs(self.fam)
+        print(fam)
+        
+        fam.to_excel("fam_cits.xlsx")
+    
+    
+if __name__ == '__main__':
+    unittest.main()
