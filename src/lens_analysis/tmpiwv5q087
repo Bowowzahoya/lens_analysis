@@ -86,7 +86,7 @@ def contains_string(string, series_of_strings):
     """
     is any of the strings in series of strings contained in string
     """
-    return series_of_strings.apply(lambda x: x in string).any()
+    return series_of_string.apply(lambda x: x in string).any()
 
 def ends_on_word(string, series_of_words):
     """

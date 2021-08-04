@@ -83,10 +83,7 @@ def is_cn(row):
     
     if not isinstance(row[MJUR_COL],str):
         return False
-    if "CN" == row[MJUR_COL]:
-        return True
-    if "CN" in row[MJUR_COL] and "WO" in row[MJUR_COL] \
-        and row[MJUR_COL].count(SEP) <= 1:
+    if "CN" in row[MJUR_COL]:
         return True
     
     return False
@@ -139,10 +136,7 @@ def is_us(row):
     
     if not isinstance(row[MJUR_COL],str):
         return False
-    if "US" == row[MJUR_COL]:
-        return True
-    if "US" in row[MJUR_COL] and "WO" in row[MJUR_COL] \
-        and row[MJUR_COL].count(SEP) <= 1:
+    if "US" in row[MJUR_COL]:
         return True
 
     return False

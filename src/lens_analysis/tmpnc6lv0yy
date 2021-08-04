@@ -143,7 +143,6 @@ def is_us(row):
         return True
     if "US" in row[MJUR_COL] and "WO" in row[MJUR_COL] \
         and row[MJUR_COL].count(SEP) <= 1:
-        return True
 
     return False
 

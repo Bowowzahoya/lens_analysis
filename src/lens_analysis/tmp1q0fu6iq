@@ -63,5 +63,4 @@ JPW_COL = "Joint Patents With"
 TOP_PAT_COL = "Top Patents"
 FAMS_NO_COL = "Simple Patent Families"
 FAMS_FRAC_COL = FAMS_NO_COL+" "+FRAC_EXT
-TOPP_FRAC_COL = TOP_PAT_COL + " "+FRAC_EXT
 

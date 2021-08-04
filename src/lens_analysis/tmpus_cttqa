@@ -1,0 +1,28 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jul 27 11:25:32 2021
+
+@author: David
+"""
+
+from .constants import *
+
+def guess_aliases(app_df, apps):
+    alias_sr = pd.Series(name="Alias")
+    alias_sr.index.name = "Name"
+    for app in apps:
+        joint_apps = app_df.loc[app, JPW_COL]
+        joint_apps = joint_apps.split(SEP)
+        print(joint_apps)
+        alias.loc[joint_apps] = normal_case(app)
+        
+        
+def normal_case(s):
+    words = s.split(" ")
+    for ix, word in enumerate(words):
+        if len(word) > 1:
+            words[ix] = word[0].upper()+word[1:].lower()
+        
+    return " ".join(words)
+        
+        

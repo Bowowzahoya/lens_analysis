@@ -86,7 +86,7 @@ def is_cn(row):
     if "CN" == row[MJUR_COL]:
         return True
     if "CN" in row[MJUR_COL] and "WO" in row[MJUR_COL] \
-        and row[MJUR_COL].count(SEP) <= 1:
+        and row[MJUR_COL].count(SEP) <= 2:
         return True
     
     return False
@@ -142,8 +142,7 @@ def is_us(row):
     if "US" == row[MJUR_COL]:
         return True
     if "US" in row[MJUR_COL] and "WO" in row[MJUR_COL] \
-        and row[MJUR_COL].count(SEP) <= 1:
-        return True
+        and row[MJUR_COL].count(SEP) <= 2:
 
     return False
 

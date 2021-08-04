@@ -15,5 +15,5 @@ from .countries import classify_by_country
 from .applicant_type import classify_by_type
 from .applicant_type import is_company, is_individual, is_academia
 from .statistics import split_by_funcs, split_by_func
-from .statistics import get_amounts_per_year, get_top_amounts
+from .statistics import get_amounts_per_year, get_top_patents
 from .applicant_disambiguation import guess_aliases
