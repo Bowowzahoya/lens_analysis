@@ -13,20 +13,26 @@ or family dataframes to applicant dataframes.
 @author: David
 """
 import pandas as pd
+import numpy as np
+
 from itertools import chain
 from collections import Counter
 from .constants import *
 
-def _mode(sample):
-     c = Counter(sample)
-     return [k for k, v in c.items() if v == c.most_common(1)[0][1]]
- 
 def join(col):
-    return BIG_SEP.join(col.astype(str))
+    col = col.dropna()
+    return BIG_SEPARATOR.join(col.astype(str))
+
+def join_first(col):
+    col = col.dropna()
+    if len(col) == 0:
+        return np.nan
+    return col.iloc[0]
 
 def join_set(col):
-    all_vals = col.astype(str).str.split(SEP)
-    return SEP.join(set(chain(*all_vals)))
+    col = col.dropna()
+    all_vals = col.astype(str).str.split(SEPARATOR)
+    return SEPARATOR.join(set(chain(*all_vals)))
 
 def join_max(col):
     return col.max()
@@ -43,32 +49,37 @@ def join_earliest(col):
 def join_size(col):
     return len(col)
 
-def join_most(col):
+def join_most(column):
     """ 
     Will return value that occurs most often    
     """
-    all_vals = col.astype(str).str.split(SEP)
-    all_vals = [val for val in chain(*all_vals)]
-    mode = _mode(all_vals)
-    return SEP.join(mode)
+    column = column.dropna()
+    all_values = column.astype(str).str.split(SEPARATOR)
+    all_values = [val for val in chain(*all_values)]
+    if len(all_values) == 0:
+        return np.nan
+    modes = get_mode_or_modes(all_values)
+    return SEPARATOR.join(modes)
 
-def join_cols(df, func_d):
+def get_mode_or_modes(list_):
+    counter = Counter(list_)
+    return [key for key, count in counter.items() if count == counter.most_common(1)[0][1]]
+
+def join_columns(df, conversion_function_dict):
     """ 
     Compresses a df of a family to a series of the family
-    func_d: dictionary of length 2 tuples, first string, second function
-        mapping of columns through function to other column
-    std_func: function to use when column not in func_d
-        will automatically map to same column name
+    conversion_function_dict: dictionary of length 2 tuples, first string, second function
+        to map column to a single value
     
     """
     sr = pd.Series()
-    for col in df.columns:
-        if col in func_d:
-            col_out = func_d[col][0]
-            func = func_d[col][1]
+    for column_in in df.columns:
+        if column_in in conversion_function_dict:
+            index_out = conversion_function_dict[column_in][0]
+            function = conversion_function_dict[column_in][1]
         else: 
             continue
-        sr[col_out] = func(df[col])
+        sr[index_out] = function(df[column_in])
     return sr
 
 def contains_word(string, series_of_words):
@@ -84,7 +95,7 @@ def contains_word(string, series_of_words):
 
 def contains_string(string, series_of_strings):
     """
-    is any of the strings in series of strings contained in string
+    is any of the strings in series_of_strings contained in string
     """
     return series_of_strings.apply(lambda x: x in string).any()
 
@@ -95,6 +106,6 @@ def ends_on_word(string, series_of_words):
     string = " "+string
     series_of_words = " "+series_of_words
     return series_of_words.apply(lambda x: \
-                                 x == string[-min(len(string), len(x)):]).any()
+                                x == string[-min(len(string), len(x)):]).any()
 
     

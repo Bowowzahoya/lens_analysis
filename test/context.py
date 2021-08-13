@@ -14,3 +14,6 @@ if package_path not in sys.path:
 print(package_path)
 
 import lens_analysis
+
+RESOURCES_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)),"res/")
+OUTPUT_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)),"out/")

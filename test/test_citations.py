@@ -1,29 +1,15 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Mar  1 13:30:01 2021
-
-@author: David
-"""
-
-import unittest
-from context import lens_analysis
-from lens_analysis import citations as ct
 import pandas as pd
+import numpy as np
+import os
 
-FOLD = "res/"
+from context import lens_analysis, RESOURCES_FOLDER, OUTPUT_FOLDER
+from lens_analysis import citations as ct
 
+TEST_FAMILIES = pd.read_excel(RESOURCES_FOLDER+"ai-and-nanotech-families.xlsx", index_col=0)
 
-class TestFuncs(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.fam = pd.read_excel(FOLD+"fam.xlsx")
+def test_get_citation_score():
+    citation_scores = ct.get_citation_score(TEST_FAMILIES, skip_years=[2019,2020,2021])
+    assert len(citation_scores.dropna()) == 51
+    assert round(citation_scores["US 201762520167 P"], 2) == 0.47
 
-    def testCalcMncs(self):
-        fam = ct.calc_mncs(self.fam)
-
-        assert fam.iloc[0]["Mean Normalized Citation Score"] > 0.202 and fam.iloc[0]["Mean Normalized Citation Score"] < 0.203
-        assert str(fam.iloc[-1]["Mean Normalized Citation Score"]) == "nan"
-    
-    
-if __name__ == '__main__':
-    unittest.main()
+test_get_citation_score()
