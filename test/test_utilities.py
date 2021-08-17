@@ -136,3 +136,11 @@ def test_get_mode_or_modes():
     modes = ut.get_mode_or_modes(list_)
     assert modes == [1]
 
+def test_unfold_cell_overloaded_column():
+    df = pd.DataFrame({1:{"Applicants":"IBM UK;;IBM", "Weight per Applicant":0.5},
+                    2:{"Applicants":"IBM UK", "Weight per Applicant":1},
+                    3:{"Applicants":"TOMAHAWK INC", "Weight per Applicant":1}}).transpose()
+    new_df = ut.unfold_cell_overloaded_column(df, "Applicants")
+    assert new_df.loc[1].size == 4
+    assert new_df.loc[1, "Weight per Applicant"].sum() == 1
+    assert all(new_df.loc[2] == pd.Series({"Applicants":"IBM UK", "Weight per Applicant":1}))
