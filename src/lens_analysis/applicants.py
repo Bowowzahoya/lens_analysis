@@ -30,11 +30,11 @@ import pandas as pd
 from itertools import chain
 from collections import defaultdict
 from .constants import *
-from .utilities import join_columns, get_conversion_function_dict
+from .utilities import join_columns, APPLICANTS_DEFAULT_CONVERSION_FUNCTION_LIST
 from .utilities import unfold_cell_overloaded_column
 
 def merge_to_applicants(families: pd.DataFrame, 
-                        custom_conversion_function_dict={},
+                        conversion_function_list=None,
                         aliases=pd.Series()):
     """
     Merges a families dataframe into 
@@ -57,8 +57,9 @@ def merge_to_applicants(families: pd.DataFrame,
 
     groupby = families.groupby(ALIASED_APPLICANT_COL)
     
-    conversion_function_dict = get_conversion_function_dict(custom_conversion_function_dict, type_="applicants")
-    applicants = groupby.apply(join_columns, conversion_function_dict)
+    if isinstance(conversion_function_list, type(None)):
+        conversion_function_list = APPLICANTS_DEFAULT_CONVERSION_FUNCTION_LIST
+    applicants = groupby.apply(join_columns, conversion_function_list)
     return applicants
 
 def get_aliases(applicant_series:pd.Series, aliases):

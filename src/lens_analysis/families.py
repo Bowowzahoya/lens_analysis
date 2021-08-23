@@ -22,10 +22,9 @@ from lens_analysis.market_coverage import get_market_coverage
 from .constants import *
 from .citations import get_citation_score
 from .market_coverage import get_market_coverage
-from .utilities import join_columns
-from .utilities import get_conversion_function_dict
+from .utilities import join_columns, FAMILIES_DEFAULT_CONVERSION_FUNCTION_LIST
 
-def merge_to_family(lens_export: pd.DataFrame, custom_conversion_function_dict={}):
+def merge_to_family(lens_export: pd.DataFrame, conversion_function_list=None):
     """
     Merges a Lens patent export at the publication level into families.
     
@@ -46,8 +45,9 @@ def merge_to_family(lens_export: pd.DataFrame, custom_conversion_function_dict={
     
     groupby = lens_export.groupby(SORTED_PRIORITY_NUMBERS_COL)
     
-    conversion_function_dict = get_conversion_function_dict(custom_conversion_function_dict, type_="families")
-    families = groupby.apply(join_columns, conversion_function_dict)
+    if isinstance(conversion_function_list, type(None)):
+        conversion_function_list = FAMILIES_DEFAULT_CONVERSION_FUNCTION_LIST
+    families = groupby.apply(join_columns, conversion_function_list)
 
     return families
 
