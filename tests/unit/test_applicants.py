@@ -21,8 +21,3 @@ def test_one_hot_encode_years():
     assert families_add_on.iloc[2]["2016"] == 1
     assert families_add_on.iloc[3]["2017"] == 1
 
-def test_merge_to_applicants():
-    applicants = ap.merge_to_applicants(TEST_FAMILIES)
-    applicants.to_excel(OUTPUT_FOLDER+"applicants_df.xlsx")
-
-test_merge_to_applicants()

@@ -21,42 +21,49 @@ from collections import Counter
 from .constants import *
 
 # Family and applicant merging mixins
-def join_columns(df, conversion_function_list):
-    """ 
-    Compresses a dataframe (typically a groupby subset) to a series by specified conversion functions
-    """
-    return conversion_function_list.convert(df)
+def join_columns(df, dataframe_compressor):
+    return dataframe_compressor.convert(df)
 
-class ConversionFunctionList():
-    def __init__(self, conversion_functions: list):
-        self.conversion_functions = []
-        for conversion_function in conversion_functions:
-            self.update(conversion_function)
+class DataFrameCompressor():
+    """
+    Compresses a DataFrame to a series using 'CompressionFunction' instances
+    """
+    def __init__(self, compression_functions: list):
+        self.compression_functions = []
+        for compression_function in compression_functions:
+            self.update(compression_function)
     
     def convert(self, dataframe):
         series = pd.Series(dtype="object")
-        for conversion_function in self.conversion_functions:
-            series = series.append(conversion_function.convert(dataframe))
+        for compression_function in self.compression_functions:
+            series = series.append(compression_function.convert(dataframe))
         return series
 
-    def update(self, conversion_function):
-        if isinstance(conversion_function, ConversionFunction):
-            self.update_from_conversion_function(conversion_function)
-        elif isinstance(conversion_function, tuple):
-            self.update_from_tuple(conversion_function)
+    def update(self, compression_function):
+        if isinstance(compression_function, CompressionFunction):
+            self.update_from_compression_function(compression_function)
+        elif isinstance(compression_function, tuple):
+            self.update_from_tuple(compression_function)
 
-    def update_from_conversion_function(self, conversion_function):
-        self.conversion_functions.append(conversion_function)
+    def update_from_compression_function(self, compression_function):
+        self.compression_functions.append(compression_function)
 
     def update_from_tuple(self, tuple_):
         if len(tuple_) == 4:
             kwargs = tuple_[3]
         else:
             kwargs = {}
-        conversion_function = ConversionFunction(*tuple_[:3], **kwargs)
-        self.conversion_functions.append(conversion_function)
+        compression_function = CompressionFunction(*tuple_[:3], **kwargs)
+        self.compression_functions.append(compression_function)
 
-class ConversionFunction():
+class CompressionFunction():
+    """
+    Compresses a column in a DataFrame to a value using a specified function
+
+    Can use weighted functions if 'weighted_column_name' is set
+
+    If regex-pattern provided, will work on multiple columns
+    """
     def __init__(self, function, in_column_name, out_index_name, 
                 weight_column_name=None):
         self.function = function
@@ -90,7 +97,7 @@ class ConversionFunction():
         return zip(in_names, out_names)
         
     def convert(self, dataframe):
-        series = pd.Series()
+        series = pd.Series(dtype="object")
         for in_column_name, out_index_name in self.get_in_out_pairs(dataframe):
             series[out_index_name] = self.convert_one(dataframe, in_column_name)
 
@@ -167,7 +174,7 @@ def get_mode_or_modes(list_):
     counter = Counter(list_)
     return [key for key, count in counter.items() if count == counter.most_common(1)[0][1]]
 
-FAMILIES_DEFAULT_CONVERSION_FUNCTION_LIST = ConversionFunctionList([\
+FAMILIES_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
     (join_set, JURISDICTION_COL, JURISDICTIONS_COL),
     (join_set, KIND_COL, KINDS_COL),
     (join_set, PUBLICATION_NUMBER_COL, PUBLICATION_NUMBERS_COL),
@@ -193,7 +200,7 @@ FAMILIES_DEFAULT_CONVERSION_FUNCTION_LIST = ConversionFunctionList([\
     (join_set, US_CLASSIFICATIONS_COL, US_CLASSIFICATIONS_COL),
     (join_size, HAS_FULL_TEXT_COL, INCLUDED_SIMPLE_FAMILY_SIZE_COL)])
 
-APPLICANTS_DEFAULT_CONVERSION_FUNCTION_LIST = ConversionFunctionList([\
+APPLICANTS_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
     (join_set, APPLICANTS_COL, JOINT_PATENTS_WITH_COL),
     (join_size, LENS_IDS_COL, FAMILIES_COUNT_COL),
     (join_set, JURISDICTIONS_COL, JURISDICTIONS_COL),

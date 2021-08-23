@@ -9,20 +9,6 @@ Main functions:
     - merge_to_applicants(), takes a patent family DataFrame and
     groups them into families per applicant, also distilling other
     information like covered jurisdiction, market coverage, citation scores
-    
-    The function makes use of dictionary 
-    FUNC_D that maps certain columns from the family DataFrame (key)
-    to new columns (value1) in the applicant DataFrame 
-    through a function (value2)
-    
-    You can add or change these mappings by providing a custom_func_d
-    
-    - alias_apps(), maps applicant names in a family DataFrame to
-    other names. Can be used to add different variants of a name together.
-    For example IBM Licensing, IBM China and I.B.M. all map to IBM.
-    This can be done using either a dict or a function.
-    After this, merge_to_applicants() can be used on the new applicant column
-    to get a fairer picture.
 
 @author: David
 """
@@ -30,15 +16,21 @@ import pandas as pd
 from itertools import chain
 from collections import defaultdict
 from .constants import *
-from .utilities import join_columns, APPLICANTS_DEFAULT_CONVERSION_FUNCTION_LIST
+from .utilities import join_columns, APPLICANTS_DEFAULT_DATAFRAME_COMPRESSOR
 from .utilities import unfold_cell_overloaded_column
 
 def merge_to_applicants(families: pd.DataFrame, 
-                        conversion_function_list=None,
-                        aliases=pd.Series()):
+                        dataframe_compressor=None,
+                        aliases=pd.Series(dtype="object")):
     """
     Merges a families dataframe into applicants
     
+    Parameters:
+        families: DataFrame
+        dataframe_compressor: DataFrameCompressor
+        - Provides how to compress the different columns to a single value per applicant
+        aliases: Series
+        - Aliases to use per applicant (e.g. IBM UK: IBM, IBM CO LTD: IBM)
     Returns:
         applicants: DataFrame of applicants with as index the applicant name (or aliased name if supplied)
     """
@@ -48,9 +40,9 @@ def merge_to_applicants(families: pd.DataFrame,
 
     groupby = families.groupby(ALIASED_APPLICANT_COL)
     
-    if isinstance(conversion_function_list, type(None)):
-        conversion_function_list = APPLICANTS_DEFAULT_CONVERSION_FUNCTION_LIST
-    applicants = groupby.apply(join_columns, conversion_function_list)
+    if isinstance(dataframe_compressor, type(None)):
+        dataframe_compressor = APPLICANTS_DEFAULT_DATAFRAME_COMPRESSOR
+    applicants = groupby.apply(join_columns, dataframe_compressor)
     return applicants
 
 def _one_hot_encode_years(families, year_column_name=EARLIEST_PRIORITY_YEAR_COL):

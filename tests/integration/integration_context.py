@@ -8,7 +8,7 @@ Created on Tue Jun  2 15:30:43 2020
 import os
 import sys
 package_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 
-                                            '../src'))
+                                            '../../src'))
 if package_path not in sys.path:
     sys.path.insert(0, package_path)
 print(package_path)

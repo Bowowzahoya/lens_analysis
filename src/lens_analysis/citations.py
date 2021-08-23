@@ -33,7 +33,7 @@ def get_citation_score(dataframe,
 
     mean_citations_per_year = dataframe.groupby(year_column)[citation_column].mean()
 
-    citation_scores = pd.Series(index=dataframe.index)
+    citation_scores = pd.Series(index=dataframe.index, dtype="object")
     for year in mean_citations_per_year.index:
         if year in skip_years: continue
 

@@ -2,16 +2,12 @@
 """
 Created on Mon Mar  1 13:24:43 2021
 Functionality for grouping families from Lens .csv exports
-Using merge_to_family() to create a dataframe of families with 
+Using 'merge_to_family()' to create a dataframe of families with 
 all covered jurisdictions, earliest publication data, 
 all applicant names, etc.
 
-The function makes use of dictionary 
-FUNC_D that maps certain columns from the family DataFrame (key)
-to new columns (value1) in the applicant DataFrame 
-through a function (value2)
-    
-You can add or change these mappings by providing a custom_func_d
+Additional parameters such as citation scores
+can be calculated using 'add_extra_family_information()'
 
 @author: David
 """
@@ -22,21 +18,17 @@ from lens_analysis.market_coverage import get_market_coverage
 from .constants import *
 from .citations import get_citation_score
 from .market_coverage import get_market_coverage
-from .utilities import join_columns, FAMILIES_DEFAULT_CONVERSION_FUNCTION_LIST
+from .utilities import join_columns, FAMILIES_DEFAULT_DATAFRAME_COMPRESSOR
 
-def merge_to_family(lens_export: pd.DataFrame, conversion_function_list=None):
+def merge_to_family(lens_export: pd.DataFrame, dataframe_compressor=None):
     """
     Merges a Lens patent export at the publication level into families.
     
     Parameters:
         lens_export: DataFrame
-        Lens export with publications per row
-        
-        custom_conversion_function_dict: dict with tuples of length 2 as values, optional
-        A dictionary of which columns in the lens_export to map to which columns
-        in the family DataFrame, using which function. Where no values, will use default conversion dict.
-        The default is {}.
-    
+        - Lens export with publications per row
+        dataframe_compressor: DataFrameCompressor
+        - Provides how to compress the different columns to a single value per family
     Returns:
         families: DataFrame of patent families with as index the sorted priority numbers
     """
@@ -45,9 +37,9 @@ def merge_to_family(lens_export: pd.DataFrame, conversion_function_list=None):
     
     groupby = lens_export.groupby(SORTED_PRIORITY_NUMBERS_COL)
     
-    if isinstance(conversion_function_list, type(None)):
-        conversion_function_list = FAMILIES_DEFAULT_CONVERSION_FUNCTION_LIST
-    families = groupby.apply(join_columns, conversion_function_list)
+    if isinstance(dataframe_compressor, type(None)):
+        dataframe_compressor = FAMILIES_DEFAULT_DATAFRAME_COMPRESSOR
+    families = groupby.apply(join_columns, dataframe_compressor)
 
     return families
 
@@ -79,7 +71,7 @@ def _get_is_top_patents(patent_powers: pd.Series, top_percentage=0.1):
     non_na_patent_powers = patent_powers.dropna()
     sorted_patent_powers = non_na_patent_powers.sort_values(ascending=False)
 
-    top_threshold = int(top_percentage*len(patent_powers))
+    top_threshold = int(top_percentage*len(patent_powers.dropna()))
     top_indices = sorted_patent_powers.iloc[:top_threshold].index
 
     is_top_patents = pd.Series(index=patent_powers.index, data=np.nan)
