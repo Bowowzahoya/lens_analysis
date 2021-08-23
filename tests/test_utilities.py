@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import re
 
 from context import lens_analysis, RESOURCES_FOLDER, OUTPUT_FOLDER
 from lens_analysis import utilities as ut
@@ -96,51 +97,71 @@ def test_join_size_not_nan():
     joined_column = ut.join_size_not_nan(COLUMN_NANS)
     assert joined_column == 0
 
-# test join_columns
+# test join_columns and conversion functions
 def test_join_columns():
-    conversion_function_dict = {"text_col":("text_index", ut.join_set),
-                                "number_col":("number_index", ut.join_max)}
-    sr = ut.join_columns(TEST_DF, conversion_function_dict)
+    conversion_function_list = ut.ConversionFunctionList([\
+                    (ut.join_set, "text_col", "text_index"),
+                    (ut.join_max, "number_col", "number_index")])
+    sr = ut.join_columns(TEST_DF, conversion_function_list)
     assert len(sr) == 2
     assert "text_index" in sr.index
     assert "number_index" in sr.index
     assert "text_col" not in sr.index
     assert sr["number_index"] == 2
 
+def test_conversion_function_get_in_out_pairs():
+    df = pd.DataFrame({0:{"2010":1, "2011":0, "weight column":1},
+                    1:{"2010":0, "2011":1, "weight column":0.5},
+                    2:{"2010":0, "2011":1, "weight column":1}}).transpose()
+    column_in = re.compile("[0-9]{4}")
+    column_out = lambda s: s+" (fractionally counted)"
+    conversion_function = ut.ConversionFunction(ut.join_sum, column_in, column_out)
+    in_out_pairs = list(conversion_function.get_in_out_pairs(df))
+    assert in_out_pairs[0] == ('2010', '2010 (fractionally counted)')
+    assert in_out_pairs[1] == ('2011', '2011 (fractionally counted)')
 
-def test_conversion_function_convert():
+def test_conversion_function_convert_one():
     df = pd.DataFrame({0:{"column in":1, "weight column":1}, 
                     1:{"column in":2, "weight column":2}}).transpose()
     conversion_function = ut.ConversionFunction(ut.join_sum, "column in", "column out")
-    value = conversion_function.convert(df)
+    value = conversion_function.convert_one(df, "column in")
     assert value == 3
 
-def test_conversion_function_convert_weighted():
+def test_conversion_function_convert_one_weighted():
     df = pd.DataFrame({0:{"column in":5, "weight column":1}, 
                     1:{"column in":2, "weight column":0.5}}).transpose()
     conversion_function = ut.ConversionFunction(ut.join_sum, "column in", "column out", 
                                                 weight_column_name="weight column")
-    value = conversion_function.convert(df)
+    value = conversion_function.convert_one(df, "column in")
     assert value == 6
 
-def test_conversion_function_convert_weighted_mean():
+def test_conversion_function_convert_one_weighted_mean():
     df = pd.DataFrame({0:{"column in":5, "weight column":1}, 
                     1:{"column in":2, "weight column":2}}).transpose()
     conversion_function = ut.ConversionFunction(ut.join_mean, "column in", "column out", 
                                                 weight_column_name="weight column")
-    value = conversion_function.convert(df)
+    value = conversion_function.convert_one(df, "column in")
     assert value == 3
 
-def test_conversion_function_convert_weighted_size():
+def test_conversion_function_convert_one_weighted_size():
     df = pd.DataFrame({0:{"column in":5, "weight column":1}, 
                     1:{"column in":2, "weight column":2},
                     2:{"column in":np.nan, "weight column":3}}).transpose()
     conversion_function = ut.ConversionFunction(ut.join_size_not_nan, "column in", "column out", 
                                                 weight_column_name="weight column")
-    value = conversion_function.convert(df)
+    value = conversion_function.convert_one(df, "column in")
     assert value == 3
 
-test_conversion_function_convert_weighted_size()
+def test_conversion_function_convert_multiple():
+    df = pd.DataFrame({0:{"2010":1, "2011":0, "weight column":1},
+                    1:{"2010":0, "2011":1, "weight column":0.5},
+                    2:{"2010":0, "2011":1, "weight column":1}}).transpose()
+    column_in = re.compile("[0-9]{4}")
+    column_out = lambda s: s+" (fractionally counted)"
+    conversion_function = ut.ConversionFunction(ut.join_sum, column_in, column_out, weight_column_name="weight column")
+    values = conversion_function.convert(df)
+    assert all(values == pd.Series({"2010 (fractionally counted)":1, "2011 (fractionally counted)":1.5}))
+    
 def test_conversion_function_list_convert_weighted():
     df = pd.DataFrame({0:{"column in":5, "column in2":3, "weight column":1}, 
                     1:{"column in":2, "column in2":4, "weight column":2}}).transpose()
@@ -149,7 +170,7 @@ def test_conversion_function_list_convert_weighted():
         (ut.join_mean, "column in2", "column out2"),
         (ut.join_sum, "column in", "column out")])
     sr = conversion_function_list.convert(df)
-    assert all(sr == pd.Series({"column out weighted": 3, "column out2": 3.5, "column out":7}))
+    assert all(sr == pd.Series({"column out weighted": 9, "column out2": 3.5, "column out":7}))
 
 # test contains / ends on / starts with
 def test_contains_word():

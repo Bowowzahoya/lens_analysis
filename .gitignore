@@ -1,5 +1,5 @@
 lens-analysis-venv/
 .vscode/
 .pytest_cache/
-test/__pycache__/
+tests/__pycache__/
 src/lens_analysis/__pycache__/

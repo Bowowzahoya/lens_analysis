@@ -14,6 +14,7 @@ or family dataframes to applicant dataframes.
 """
 import pandas as pd
 import numpy as np
+import re
 
 from itertools import chain
 from collections import Counter
@@ -27,53 +28,91 @@ def join_columns(df, conversion_function_list):
     return conversion_function_list.convert(df)
 
 class ConversionFunctionList():
-    def __init__(self, tuple_list: list):
+    def __init__(self, conversion_functions: list):
         self.conversion_functions = []
-        self.in_column_names = []
-        for tuple_ in tuple_list:
-            if len(tuple_) == 4:
-                kwargs = tuple_[3]
-            else:
-                kwargs = {}
-            conversion_function = ConversionFunction(*tuple_[:3], **kwargs)
-            self.conversion_functions.append(conversion_function)
-            self.in_column_names.append(tuple_[1])
+        for conversion_function in conversion_functions:
+            self.update(conversion_function)
     
-    def convert(self, df):
-        sr = pd.Series(dtype="object")
+    def convert(self, dataframe):
+        series = pd.Series(dtype="object")
         for conversion_function in self.conversion_functions:
-            sr[conversion_function.out_index_name] = conversion_function.convert(df)
-        return sr
+            series = series.append(conversion_function.convert(dataframe))
+        return series
+
+    def update(self, conversion_function):
+        if isinstance(conversion_function, ConversionFunction):
+            self.update_from_conversion_function(conversion_function)
+        elif isinstance(conversion_function, tuple):
+            self.update_from_tuple(conversion_function)
+
+    def update_from_conversion_function(self, conversion_function):
+        self.conversion_functions.append(conversion_function)
+
+    def update_from_tuple(self, tuple_):
+        if len(tuple_) == 4:
+            kwargs = tuple_[3]
+        else:
+            kwargs = {}
+        conversion_function = ConversionFunction(*tuple_[:3], **kwargs)
+        self.conversion_functions.append(conversion_function)
 
 class ConversionFunction():
-    def __init__(self, function, in_column_name: str, out_index_name: str, 
+    def __init__(self, function, in_column_name, out_index_name, 
                 weight_column_name=None):
         self.function = function
-        self.in_column_name = in_column_name
-        self.out_index_name = out_index_name
+        self.in_column_name = in_column_name # can be string or regex-pattern
+        self.out_index_name = out_index_name # can be string or function with input 'in_column_name' (must be if in_column_name is regex-pattern)
         self.weight_column_name = weight_column_name
 
     @property
     def is_weighted(self):
         return not isinstance(self.weight_column_name, type(None))
 
-    def convert(self, df):
+    @property
+    def in_column_is_re_pattern(self):
+        return isinstance(self.in_column_name, re.Pattern)
+
+    @property
+    def out_index_is_function(self):
+        return callable(self.out_index_name)
+
+    def get_in_out_pairs(self, dataframe):
+        if self.in_column_is_re_pattern:
+            in_names = [col for col in dataframe.columns if bool(self.in_column_name.match(col))]
+        else:
+            in_names = [self.in_column_name]
+
+        if self.out_index_is_function:
+            out_names = [self.out_index_name(col) for col in in_names]
+        else:
+            out_names = [self.out_index_name]
+        
+        return zip(in_names, out_names)
+        
+    def convert(self, dataframe):
+        series = pd.Series()
+        for in_column_name, out_index_name in self.get_in_out_pairs(dataframe):
+            series[out_index_name] = self.convert_one(dataframe, in_column_name)
+
+        return series
+
+    def convert_one(self, dataframe, in_column_name):
         if self.is_weighted:
             if self.function == join_mean:
-                column = df[self.in_column_name]*df[self.weight_column_name]
-                total_weight = df[self.weight_column_name].sum()
+                column = dataframe[in_column_name]*dataframe[self.weight_column_name]
+                total_weight = dataframe[self.weight_column_name].sum()
                 return join_sum(column)/total_weight
             elif self.function == join_sum:
-                column = df[self.in_column_name]*df[self.weight_column_name]
+                column = dataframe[in_column_name]*dataframe[self.weight_column_name]
                 return self.function(column)
             elif self.function == join_size_not_nan:
-                mask = df[self.in_column_name].notna()
-                column = mask*df[self.weight_column_name]
+                mask = dataframe[in_column_name].notna()
+                column = mask*dataframe[self.weight_column_name]
                 return join_sum(column)
             else:
                 raise Exception(f"Can not do a weighted join with function {self.function}.")
         else:
-            return self.function(df[self.in_column_name])
+            return self.function(dataframe[in_column_name])
 
 def join(col):
     col = col.dropna()
@@ -168,7 +207,10 @@ APPLICANTS_DEFAULT_CONVERSION_FUNCTION_LIST = ConversionFunctionList([\
     (join_sum, IS_TOP_PATENT_COL, TOP_PATENTS_COL),
     (join_size_not_nan, IS_TOP_PATENT_COL, HAS_CITATION_SCORE_NUMBER_COL),
     (join_sum, IS_TOP_PATENT_COL, FRACTIONAL_TOP_PATENTS_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL}),
-    (join_size_not_nan, IS_TOP_PATENT_COL, FRACTIONAL_HAS_CITATION_SCORE_NUMBER_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL})])
+    (join_size_not_nan, IS_TOP_PATENT_COL, FRACTIONAL_HAS_CITATION_SCORE_NUMBER_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL}),
+    (join_sum, re.compile("[0-9]{4}"), lambda x: x),
+    (join_sum, re.compile("[0-9]{4}"), lambda x: x+FRACTIONAL_COL_EXTENSION, {"weight_column_name": WEIGHT_PER_APPLICANT_COL})])
+    
 
 # Applicant utilities
 def unfold_cell_overloaded_column(dataframe, in_column_name, out_column_name, separator=SEPARATOR):
