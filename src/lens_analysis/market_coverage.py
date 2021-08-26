@@ -36,11 +36,11 @@ def _get_family_market_coverage(row, application_stage_penalty=0.7, wo_equivalen
     types = row[DOCUMENT_TYPES_COL]
     
     gdps = [_get_jurisdiction_gdps(jur, year) for jur in jurisdictions]
-    market_coverage = sum(gdps)/_get_jurisdiction_gdps(US_JURISDICTION_ENTRY, year)
+    market_coverage = sum(gdps)/_get_jurisdiction_gdps(US_JURISDICTION, year)
 
-    if jurisdictions == [WO_JURISDICTION_ENTRY]:
+    if jurisdictions == [WO_JURISDICTION]:
         market_coverage = wo_equivalent
-    elif WO_JURISDICTION_ENTRY in jurisdictions:
+    elif WO_JURISDICTION in jurisdictions:
         market_coverage = max((wo_equivalent+market_coverage)/2, market_coverage)
 
     if GRANTED_PATENT_ENTRY not in types:

@@ -151,6 +151,9 @@ def join_earliest(col):
 def join_size(col):
     return len(col)
 
+def join_any(col):
+    return any(col)
+
 def join_size_not_nan(col):
     isna = col.isna().value_counts()
     if False in isna.index:
@@ -202,14 +205,15 @@ FAMILIES_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
 
 APPLICANTS_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
     (join_set, APPLICANTS_COL, JOINT_PATENTS_WITH_COL),
+    (join_any, APPLICANT_IN_INVENTORS_COL, IS_INVENTOR_COL),
     (join_size, LENS_IDS_COL, FAMILIES_COUNT_COL),
     (join_set, JURISDICTIONS_COL, JURISDICTIONS_COL),
     (join_most, JURISDICTIONS_COL, MAIN_JURISDICTION_COL),
     (join_set, PRIORITY_JURISDICTIONS_COL, PRIORITY_JURISDICTIONS_COL),
     (join_most, PRIORITY_JURISDICTIONS_COL, MAIN_PRIORITY_JURISDICTION_COL),
     (join_mean, CITATION_SCORE_COL, MEAN_CITATION_SCORE_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL}),
-    (join_mean, MARKET_COVERAGE_COL, MEAN_MARKET_COVERAGE, {"weight_column_name": WEIGHT_PER_APPLICANT_COL}),
-    (join_mean, PATENT_POWER_COL, MEAN_PATENT_POWER, {"weight_column_name": WEIGHT_PER_APPLICANT_COL}),
+    (join_mean, MARKET_COVERAGE_COL, MEAN_MARKET_COVERAGE_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL}),
+    (join_mean, PATENT_POWER_COL, MEAN_PATENT_POWER_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL}),
     (join_sum, WEIGHT_PER_APPLICANT_COL, FRACTIONAL_FAMILIES_COUNT_COL),
     (join_sum, IS_TOP_PATENT_COL, TOP_PATENTS_COL),
     (join_size_not_nan, IS_TOP_PATENT_COL, HAS_CITATION_SCORE_NUMBER_COL),
@@ -218,6 +222,14 @@ APPLICANTS_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
     (join_sum, re.compile("[0-9]{4}"), lambda x: x),
     (join_sum, re.compile("[0-9]{4}"), lambda x: x+FRACTIONAL_COL_EXTENSION, {"weight_column_name": WEIGHT_PER_APPLICANT_COL})])
     
+APPLICANT_TYPES_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
+    (join_mean, MEAN_CITATION_SCORE_COL, MEAN_CITATION_SCORE_COL, {"weight_column_name": FRACTIONAL_FAMILIES_COUNT_COL}),
+    (join_mean, MEAN_MARKET_COVERAGE_COL, MEAN_MARKET_COVERAGE_COL, {"weight_column_name": FRACTIONAL_FAMILIES_COUNT_COL}),
+    (join_mean, MEAN_PATENT_POWER_COL, MEAN_PATENT_POWER_COL, {"weight_column_name": FRACTIONAL_FAMILIES_COUNT_COL}),
+    (join_sum, FRACTIONAL_FAMILIES_COUNT_COL, FRACTIONAL_FAMILIES_COUNT_COL),
+    (join_sum, FRACTIONAL_TOP_PATENTS_COL, FRACTIONAL_TOP_PATENTS_COL),
+    (join_sum, FRACTIONAL_HAS_CITATION_SCORE_NUMBER_COL, FRACTIONAL_HAS_CITATION_SCORE_NUMBER_COL),
+    (join_sum, re.compile("[0-9]{4}"+FRACTIONAL_COL_EXTENSION.replace("(", "\(").replace(")","\)")), lambda x: x)])
 
 # Applicant utilities
 def unfold_cell_overloaded_column(dataframe, in_column_name, out_column_name, separator=SEPARATOR):
@@ -273,4 +285,5 @@ def ends_on_word(string, series_of_words):
     return series_of_words.apply(lambda x: \
                                 x == string[-min(len(string), len(x)):]).any()
 
-    
+def has_string(string, series_of_strings):
+    return string in series_of_strings.values

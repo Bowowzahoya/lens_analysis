@@ -172,6 +172,18 @@ def test_dataframe_compressor_convert_weighted():
     sr = dataframe_compressor.convert(df)
     assert all(sr == pd.Series({"column out weighted": 9, "column out2": 3.5, "column out":7}))
 
+def test_dataframe_compressor_convert_re():
+    dataframe_compressor = ut.DataFrameCompressor([
+        (ut.join_sum, re.compile("[0-9]{4}"+" (extension)".replace("(", "\(").replace(")","\)")), lambda x: x)])
+    
+    dataframe = pd.DataFrame(
+        {0:{"2010 (extension)":1, "2011":2},
+        1:{"2010 (extension)":2, "2011":3}}).transpose()
+
+    series = dataframe_compressor.convert(dataframe)
+    print(series)
+    assert all(series == pd.Series({"2010 (extension)":3}))
+
 # test contains / ends on / starts with
 def test_contains_word():
     series_of_words = pd.Series({0:"ai", 1:"artificial intelligence"})

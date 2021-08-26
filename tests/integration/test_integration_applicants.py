@@ -18,6 +18,8 @@ def test_per_column():
         column = applicants[column_name]
         if column.dtype == "object":
             assert (column.str.len() == TEST_APPLICANTS[column_name].str.len()).all()
+        elif column.dtype == "bool":
+            assert (column == TEST_APPLICANTS[column_name]).all()
         else:
             assert (abs(column - TEST_APPLICANTS[column_name]) < 0.001).all()
 

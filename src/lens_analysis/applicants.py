@@ -20,7 +20,7 @@ from .utilities import join_columns, APPLICANTS_DEFAULT_DATAFRAME_COMPRESSOR
 from .utilities import unfold_cell_overloaded_column
 
 def merge_to_applicants(families: pd.DataFrame, 
-                        dataframe_compressor=None,
+                        dataframe_compressor=APPLICANTS_DEFAULT_DATAFRAME_COMPRESSOR,
                         aliases=pd.Series(dtype="object")):
     """
     Merges a families dataframe into applicants
@@ -36,12 +36,12 @@ def merge_to_applicants(families: pd.DataFrame,
     """
     families = families.join(_one_hot_encode_years(families))
     families = unfold_cell_overloaded_column(families, APPLICANTS_COL, APPLICANT_COL, separator=SEPARATOR)
+
+    families[APPLICANT_IN_INVENTORS_COL] = families.apply(_get_applicant_in_inventors, axis=1)
     families[ALIASED_APPLICANT_COL] = _get_aliases(families[APPLICANT_COL], aliases)
 
     groupby = families.groupby(ALIASED_APPLICANT_COL)
-    
-    if isinstance(dataframe_compressor, type(None)):
-        dataframe_compressor = APPLICANTS_DEFAULT_DATAFRAME_COMPRESSOR
+
     applicants = groupby.apply(join_columns, dataframe_compressor)
     return applicants
 
@@ -57,3 +57,6 @@ def _one_hot_encode_years(families, year_column_name=EARLIEST_PRIORITY_YEAR_COL)
 def _get_aliases(applicant_series:pd.Series, aliases):
     aliased_list = [aliases[applicant] if applicant in aliases.index else applicant for applicant in applicant_series]
     return pd.Series(index=applicant_series.index, data=aliased_list)
+
+def _get_applicant_in_inventors(row):
+    return row[APPLICANT_COL] in row[INVENTORS_COL].split(SEPARATOR)

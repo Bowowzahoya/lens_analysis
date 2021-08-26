@@ -20,7 +20,7 @@ from .citations import get_citation_score
 from .market_coverage import get_market_coverage
 from .utilities import join_columns, FAMILIES_DEFAULT_DATAFRAME_COMPRESSOR
 
-def merge_to_family(lens_export: pd.DataFrame, dataframe_compressor=None):
+def merge_to_family(lens_export: pd.DataFrame, dataframe_compressor=FAMILIES_DEFAULT_DATAFRAME_COMPRESSOR):
     """
     Merges a Lens patent export at the publication level into families.
     
@@ -37,8 +37,6 @@ def merge_to_family(lens_export: pd.DataFrame, dataframe_compressor=None):
     
     groupby = lens_export.groupby(SORTED_PRIORITY_NUMBERS_COL)
     
-    if isinstance(dataframe_compressor, type(None)):
-        dataframe_compressor = FAMILIES_DEFAULT_DATAFRAME_COMPRESSOR
     families = groupby.apply(join_columns, dataframe_compressor)
 
     return families
