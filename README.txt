@@ -7,37 +7,51 @@ Lens offers some analytics and statistics on the website, but sometimes too limi
 For example, only the top 100 applicants are listed, most information is on publication level, not on family level, it is not possible to add different version of the same applicant together, and there are no citation scores or market coverage scores.
 
 This module provides some of these basic metrics for analysis on applicant level. 
-On top of above functionality, it also adds some functionality for recognizing Dutch and/or Chinese applicants.
-Module can potentially be expanded to include other countries.
+On top of above functionality, it also adds some functionality for grouping applicants together per type
+e.g. Chinese companies, Chinese academia, American companies, EU-27 companies, etc.
 
 -----------------------
 -----------------------
-USAGE:
-- family_dataframe = merge_to_family(export_dataframe) # merges a Lens export dataframe with index Lens ID to a family dataframe with index Priority Number
+USAGE
+Normal usage would be to first aggregate an export to patent families,
+then aggregate to applicants (possibly with aliases for applicants that exist under different names/spelling)
+then possibly aggregate even further to count patents for particular types,
+e.g. Chinese companies, Chinese universities, American companies, etc.
 
-- family_dataframe["Standardized Applicant Name"] = alias_apps(family_dataframe, aliases) # add new column to merge different names of the same applicant
+USAGE BY FUNCTION:
+- aggregate_to_family()
+Will group patent families together from a lens export (in pandas DataFrame format)
 
-- family_dataframe = calc_mncs(family_dataframe) # calculate mean normalized citation score and add as new column
+import pandas as pd
+lens_export = pd.read_csv("lens-export.csv", index_col=0)
+families = aggregate_to_family(lens_export)
 
-- family_dataframe = calc_mark_cov(family_dataframe) # calculate market coverage and add as new column
+-------------------------------
+- add_extra_family_information()
+Will add extra columns with additional family information (such as citation scores, market coverage, etc.)
 
-- applicant_dataframe = merge_to_applicant(family_dataframe) # merges to an applicant dataframe
+families = add_extra_family_information(families)
 
+-------------------------------
+- aggregate_to_applicants()
+Will group patent applicants together from a patent families DataFrame
+Can possibly include aliases for different version of the same applicant (e.g. IBM UK, IBM CO LTD, 国际商机公司, etc.)
+You need to first use add_extra_family_information() on the families DataFrame to also get citation information in the
+resultant applicant DataFrame.
 
-- is_cn() and is_nl() can be used on a family_dataframe row to identify Chinese/Dutch applicants.
+aliases = pd.read_excel("aliases.xlsx", index_col=0, header=None)
+applicants = aggregate_to_applicants(families, aliases=aliases)
 
-family_dataframe["Country"] = alias_apps(family_dataframe, alias_fs=[is_cn, is_nl], add_or=False) 
-# row entry will be None if not Dutch or Chinese
+-------------------------------
+- add_labels()
+Will classify patent applicants and give them a label according to applicant type (e.g. Chinese company, American academia).
+Classification is based on a list of known applicants; keywords to indicate university, company; company types per country; applicant in inventor list (indicates individual); main priority jurisdiction.
 
-def guess_nationality(sr):
-    if sr.count("NL") > 0.7*len(sr):
-        return "Dutch"
-    elif sr.count("CN") > 0.7*len(sr):
-        return "Chinese"
-    else:
-        return "Neither Chinese nor Dutch"
+applicants = add_labels(applicants)
 
-func_d_custom = {"Country":("Country", guess_nationality)}
-applicant_dataframe = merge_to_applicant(family_dataframe, func_d_custom=func_d_custom)
-# this will get you to an applicant dataframe where applicants are classified as Dutch 
-# if at least 70% of families are guessed as having a Dutch applicant
+-------------------------------
+- aggregate_to_applicant_types()
+Will group patent applicants together from a patent applicants DataFrame
+patent applicants DataFrame will need to have labels added first using the function add_labels()
+
+applicant_types = aggregate_to_applicant_types(applicants)

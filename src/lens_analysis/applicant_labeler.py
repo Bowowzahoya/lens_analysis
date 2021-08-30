@@ -14,6 +14,7 @@ import pandas as pd
 from .constants import *
 from .utilities import contains_word, contains_string, ends_on_word, has_string
 from .utilities import join_columns, APPLICANT_TYPES_DEFAULT_DATAFRAME_COMPRESSOR
+from .applicants import _order_applicants_columns
 
 
 class ApplicantTypeLabeler():
@@ -192,8 +193,7 @@ EU_US_CHINA_LABELER = ApplicantTypeLabeler([
     (INDIVIDUAL_IDENTIFIER, (UNKNOWN_LABEL, INDIVIDUAL_LABEL))])
 
 
-def merge_to_applicant_types(applicants: pd.DataFrame,
-        labeler=EU_US_CHINA_LABELER,
+def aggregate_to_applicant_types(applicants: pd.DataFrame,
         dataframe_compressor=APPLICANT_TYPES_DEFAULT_DATAFRAME_COMPRESSOR):
     """
     Merges a applicants dataframe into applicant types
@@ -205,10 +205,28 @@ def merge_to_applicant_types(applicants: pd.DataFrame,
     Returns:
         applicant_types: DataFrame of applicants with as index the applicant types
     """
-    applicants[[COUNTRY_OF_ORIGIN_COL, LEGAL_TYPE_COL]] = applicants.apply(labeler.label, axis=1)
-    applicants[APPLICANT_LABEL_COL] = applicants[COUNTRY_OF_ORIGIN_COL] + " " + applicants[LEGAL_TYPE_COL]
 
     groupby = applicants.groupby(APPLICANT_LABEL_COL)
     
     applicant_types = groupby.apply(join_columns, dataframe_compressor)
+
+    applicant_types = _order_applicant_types_columns(applicant_types)
+    applicant_types.sort_values(by=FRACTIONAL_FAMILIES_COUNT_COL, ascending=False, inplace=True)
+    return applicant_types
+
+def add_labels(applicants, labeler=EU_US_CHINA_LABELER):
+    applicants[[COUNTRY_OF_ORIGIN_COL, LEGAL_TYPE_COL]] = applicants.apply(labeler.label, axis=1)
+    applicants[APPLICANT_LABEL_COL] = applicants[COUNTRY_OF_ORIGIN_COL] + " " + applicants[LEGAL_TYPE_COL]
+    applicants = _order_applicants_columns(applicants)
+    return applicants
+
+def _order_applicant_types_columns(applicant_types):
+    ordered_fixed_columns = [column for column in APPLICANT_TYPES_FIXED_ORDERED_COLUMNS if column in applicant_types.columns]
+
+    fractional_yearly_amount_columns = [
+        column for column in applicant_types.columns if bool(FRACTIONAL_YEARLY_AMOUNTS_COL_RE_PATTERN.match(column))]
+
+    sorted_columns = ordered_fixed_columns+sorted(fractional_yearly_amount_columns)
+
+    applicant_types = applicant_types[sorted_columns]
     return applicant_types

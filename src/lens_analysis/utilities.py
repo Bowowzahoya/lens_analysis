@@ -107,7 +107,8 @@ class CompressionFunction():
         if self.is_weighted:
             if self.function == join_mean:
                 column = dataframe[in_column_name]*dataframe[self.weight_column_name]
-                total_weight = dataframe[self.weight_column_name].sum()
+                nan_mask = dataframe[in_column_name].isna()
+                total_weight = dataframe.loc[~nan_mask, self.weight_column_name].sum()
                 return join_sum(column)/total_weight
             elif self.function == join_sum:
                 column = dataframe[in_column_name]*dataframe[self.weight_column_name]
@@ -161,6 +162,7 @@ def join_size_not_nan(col):
     else:
         return 0
 
+
 def join_most(column):
     """ 
     Will return value that occurs most often    
@@ -187,7 +189,7 @@ FAMILIES_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
     (join_set, APPLICATION_NUMBER_COL, APPLICATION_NUMBERS_COL),
     (join_earliest, APPLICATION_DATE_COL, EARLIEST_APPLICATION_DATE_COL),
     (join_earliest, EARLIEST_PRIORITY_DATE_COL, EARLIEST_PRIORITY_DATE_COL),
-    (join_set, TITLE_COL, TITLE_COL),
+    (join_set, TITLE_COL, TITLES_COL),
     (join_first, ABSTRACT_COL, FIRST_ABSTRACT_COL),
     (join_set, APPLICANTS_COL, APPLICANTS_COL),
     (join_set, INVENTORS_COL, INVENTORS_COL),
@@ -198,7 +200,7 @@ FAMILIES_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
     (join_sum, CITED_PATENT_COUNT_COL, FAMILY_CITED_PATENT_COUNT_COL),
     (join_max, SIMPLE_FAMILY_SIZE_COL, SIMPLE_FAMILY_SIZE_COL),
     (join_max, EXTENDED_FAMILY_SIZE_COL, EXTENDED_FAMILY_SIZE_COL),
-    (join_sum, CPC_CLASSIFICATIONS_COL, CPC_CLASSIFICATIONS_COL),
+    (join_set, CPC_CLASSIFICATIONS_COL, CPC_CLASSIFICATIONS_COL),
     (join_set, IPCR_CLASSIFICATIONS_COL, IPCR_CLASSIFICATIONS_COL),
     (join_set, US_CLASSIFICATIONS_COL, US_CLASSIFICATIONS_COL),
     (join_size, HAS_FULL_TEXT_COL, INCLUDED_SIMPLE_FAMILY_SIZE_COL)])
@@ -219,8 +221,8 @@ APPLICANTS_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
     (join_size_not_nan, IS_TOP_PATENT_COL, HAS_CITATION_SCORE_NUMBER_COL),
     (join_sum, IS_TOP_PATENT_COL, FRACTIONAL_TOP_PATENTS_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL}),
     (join_size_not_nan, IS_TOP_PATENT_COL, FRACTIONAL_HAS_CITATION_SCORE_NUMBER_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL}),
-    (join_sum, re.compile("[0-9]{4}"), lambda x: x),
-    (join_sum, re.compile("[0-9]{4}"), lambda x: x+FRACTIONAL_COL_EXTENSION, {"weight_column_name": WEIGHT_PER_APPLICANT_COL})])
+    (join_sum, YEARLY_AMOUNTS_COL_RE_PATTERN, lambda x: x),
+    (join_sum, YEARLY_AMOUNTS_COL_RE_PATTERN, lambda x: x+FRACTIONAL_COL_EXTENSION, {"weight_column_name": WEIGHT_PER_APPLICANT_COL})])
     
 APPLICANT_TYPES_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
     (join_mean, MEAN_CITATION_SCORE_COL, MEAN_CITATION_SCORE_COL, {"weight_column_name": FRACTIONAL_FAMILIES_COUNT_COL}),
@@ -229,7 +231,7 @@ APPLICANT_TYPES_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
     (join_sum, FRACTIONAL_FAMILIES_COUNT_COL, FRACTIONAL_FAMILIES_COUNT_COL),
     (join_sum, FRACTIONAL_TOP_PATENTS_COL, FRACTIONAL_TOP_PATENTS_COL),
     (join_sum, FRACTIONAL_HAS_CITATION_SCORE_NUMBER_COL, FRACTIONAL_HAS_CITATION_SCORE_NUMBER_COL),
-    (join_sum, re.compile("[0-9]{4}"+FRACTIONAL_COL_EXTENSION.replace("(", "\(").replace(")","\)")), lambda x: x)])
+    (join_sum, FRACTIONAL_YEARLY_AMOUNTS_COL_RE_PATTERN, lambda x: x)])
 
 # Applicant utilities
 def unfold_cell_overloaded_column(dataframe, in_column_name, out_column_name, separator=SEPARATOR):

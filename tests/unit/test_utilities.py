@@ -54,7 +54,8 @@ def test_join_earliest():
     assert joined_column == "2010-01-03"
 
 def test_join_size_not_nan():
-    joined_column = ut.join_size_not_nan(COLUMN)
+    joined_column = ut.join_size_not_nan(COLUMN_NUMBERS)
+    print(joined_column)
     assert joined_column == 7
 
 def test_join_nans():
@@ -93,7 +94,7 @@ def test_join_earliest_nans():
     joined_column = ut.join_earliest(COLUMN_NANS)
     assert np.isnan(joined_column)
 
-def test_join_size_not_nan():
+def test_join_size_not_nan_nans():
     joined_column = ut.join_size_not_nan(COLUMN_NANS)
     assert joined_column == 0
 
@@ -143,6 +144,15 @@ def test_compression_function_convert_one_weighted_mean():
     value = compression_function.convert_one(df, "column in")
     assert value == 3
 
+def test_compression_function_convert_one_weighted_mean_nan():
+    df = pd.DataFrame({0:{"column in":5, "weight column":1}, 
+                    1:{"column in":2, "weight column":2},
+                    3:{"column in":np.nan, "weight column":3}}).transpose()
+    compression_function = ut.CompressionFunction(ut.join_mean, "column in", "column out", 
+                                                weight_column_name="weight column")
+    value = compression_function.convert_one(df, "column in")
+    assert value == 3
+
 def test_compression_function_convert_one_weighted_size():
     df = pd.DataFrame({0:{"column in":5, "weight column":1}, 
                     1:{"column in":2, "weight column":2},
@@ -174,14 +184,13 @@ def test_dataframe_compressor_convert_weighted():
 
 def test_dataframe_compressor_convert_re():
     dataframe_compressor = ut.DataFrameCompressor([
-        (ut.join_sum, re.compile("[0-9]{4}"+" (extension)".replace("(", "\(").replace(")","\)")), lambda x: x)])
+        (ut.join_sum, re.compile("^[0-9]{4}"+" (extension)".replace("(", "\(").replace(")","\)")+"$"), lambda x: x)])
     
     dataframe = pd.DataFrame(
-        {0:{"2010 (extension)":1, "2011":2},
-        1:{"2010 (extension)":2, "2011":3}}).transpose()
+        {0:{"2010 (extension)":1, "2011":2, "2012 (extension) junk":3},
+        1:{"2010 (extension)":2, "2011":3, "2012 (extension) junk":3}}).transpose()
 
     series = dataframe_compressor.convert(dataframe)
-    print(series)
     assert all(series == pd.Series({"2010 (extension)":3}))
 
 # test contains / ends on / starts with

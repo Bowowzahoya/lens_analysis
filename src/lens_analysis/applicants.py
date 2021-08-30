@@ -6,7 +6,7 @@ This module provides functionality for finding the biggest applicant
 from patent family data
 
 Main functions:
-    - merge_to_applicants(), takes a patent family DataFrame and
+    - aggregate_to_applicants(), takes a patent family DataFrame and
     groups them into families per applicant, also distilling other
     information like covered jurisdiction, market coverage, citation scores
 
@@ -19,7 +19,7 @@ from .constants import *
 from .utilities import join_columns, APPLICANTS_DEFAULT_DATAFRAME_COMPRESSOR
 from .utilities import unfold_cell_overloaded_column
 
-def merge_to_applicants(families: pd.DataFrame, 
+def aggregate_to_applicants(families: pd.DataFrame, 
                         dataframe_compressor=APPLICANTS_DEFAULT_DATAFRAME_COMPRESSOR,
                         aliases=pd.Series(dtype="object")):
     """
@@ -34,6 +34,7 @@ def merge_to_applicants(families: pd.DataFrame,
     Returns:
         applicants: DataFrame of applicants with as index the applicant name (or aliased name if supplied)
     """
+    families = _ensure_string_columns_are_strings(families)
     families = families.join(_one_hot_encode_years(families))
     families = unfold_cell_overloaded_column(families, APPLICANTS_COL, APPLICANT_COL, separator=SEPARATOR)
 
@@ -43,6 +44,9 @@ def merge_to_applicants(families: pd.DataFrame,
     groupby = families.groupby(ALIASED_APPLICANT_COL)
 
     applicants = groupby.apply(join_columns, dataframe_compressor)
+
+    applicants = _order_applicants_columns(applicants)
+    applicants.sort_values(by=FRACTIONAL_FAMILIES_COUNT_COL, ascending=False, inplace=True)
     return applicants
 
 def _one_hot_encode_years(families, year_column_name=EARLIEST_PRIORITY_YEAR_COL):
@@ -60,3 +64,21 @@ def _get_aliases(applicant_series:pd.Series, aliases):
 
 def _get_applicant_in_inventors(row):
     return row[APPLICANT_COL] in row[INVENTORS_COL].split(SEPARATOR)
+
+def _ensure_string_columns_are_strings(families):
+    for column_name in FAMILIES_STRING_COLS:
+        families.loc[:,column_name].fillna("", inplace=True)
+    return families
+
+def _order_applicants_columns(applicants):
+    ordered_fixed_columns = [column for column in APPLICANTS_FIXED_ORDERED_COLUMNS if column in applicants.columns]
+
+    yearly_amount_columns = [
+        column for column in applicants.columns if bool(YEARLY_AMOUNTS_COL_RE_PATTERN.match(column))]
+    fractional_yearly_amount_columns = [
+        column for column in applicants.columns if bool(FRACTIONAL_YEARLY_AMOUNTS_COL_RE_PATTERN.match(column))]
+
+    sorted_columns = ordered_fixed_columns+sorted(fractional_yearly_amount_columns)+sorted(yearly_amount_columns)
+
+    applicants = applicants[sorted_columns]
+    return applicants

@@ -2,7 +2,7 @@
 """
 Created on Mon Mar  1 13:24:43 2021
 Functionality for grouping families from Lens .csv exports
-Using 'merge_to_family()' to create a dataframe of families with 
+Using 'aggregate_to_family()' to create a dataframe of families with 
 all covered jurisdictions, earliest publication data, 
 all applicant names, etc.
 
@@ -20,7 +20,7 @@ from .citations import get_citation_score
 from .market_coverage import get_market_coverage
 from .utilities import join_columns, FAMILIES_DEFAULT_DATAFRAME_COMPRESSOR
 
-def merge_to_family(lens_export: pd.DataFrame, dataframe_compressor=FAMILIES_DEFAULT_DATAFRAME_COMPRESSOR):
+def aggregate_to_family(lens_export: pd.DataFrame, dataframe_compressor=FAMILIES_DEFAULT_DATAFRAME_COMPRESSOR):
     """
     Merges a Lens patent export at the publication level into families.
     
@@ -38,6 +38,8 @@ def merge_to_family(lens_export: pd.DataFrame, dataframe_compressor=FAMILIES_DEF
     groupby = lens_export.groupby(SORTED_PRIORITY_NUMBERS_COL)
     
     families = groupby.apply(join_columns, dataframe_compressor)
+
+    families = _order_families_columns(families)
 
     return families
 
@@ -58,6 +60,8 @@ def add_extra_family_information(families: pd.DataFrame):
     families[IS_TOP_PATENT_COL] = _get_is_top_patents(families[PATENT_POWER_COL])
 
     families[WEIGHT_PER_APPLICANT_COL] = _get_weight_per_applicant(families[APPLICANTS_COL])
+
+    families = _order_families_columns(families)
 
     return families
 
@@ -84,6 +88,10 @@ def _get_years(dates: pd.Series):
 def _get_weight_per_applicant(applicants_series: pd.Series):
     return 1./applicants_series.str.split(SEPARATOR).str.len()
 
+def _order_families_columns(families):
+    ordered_columns = [column for column in FAMILIES_ORDERED_COLUMNS if column in families.columns]
+    families = families[ordered_columns]
+    return families
 
 
     
