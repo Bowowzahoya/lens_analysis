@@ -39,8 +39,19 @@ Can possibly include aliases for different version of the same applicant (e.g. I
 You need to first use add_extra_family_information() on the families DataFrame to also get citation information in the
 resultant applicant DataFrame.
 
-aliases = pd.read_excel("aliases.xlsx", index_col=0, header=None)
+aliases = pd.read_excel("aliases.xlsx", index_col=0, squeeze=True)
 applicants = aggregate_to_applicants(families, aliases=aliases)
+
+-------------------------------
+- guess_aliases()
+Will guess aliases for a number of applicants, based on joint patents, and shortened versions of the applicant name
+Please note that inventors that appear in tandem with the applicant will also appear in this list
+As well as any collaboration partners with whom joint patents have been filed.
+You have to get rid of these yourself.
+
+# to guess aliases for top 20 applicants
+aliases = guess_aliases(applicants, applicants.index[0:20])
+aliases.to_excel("guessed_aliases.xlsx")
 
 -------------------------------
 - add_labels()

@@ -31,6 +31,20 @@ families_in_china.to_excel(OUTPUT_FOLDER+"families_in_china.xlsx")
 families_in_rest = families.loc[~chinese_jurisdiction_mask]
 families_in_rest.to_excel(OUTPUT_FOLDER+"families_in_rest.xlsx")
 
+print(f"{datetime.now().time()}: Merging to applicants.")
+applicants = la.aggregate_to_applicants(families)
+applicants.to_excel(OUTPUT_FOLDER+"applicants.xlsx")
+
+print(f"{datetime.now().time()}: Guessing aliases of top 20.")
+aliases = la.guess_aliases(applicants, applicants.index[0:20])
+aliases.to_excel(OUTPUT_FOLDER+"aliases.xlsx")
+input("Adapt the aliases file, save as 'aliases_adapted.xlsx' and press enter to continue...")
+
+print(f"{datetime.now().time()}: Remerging applicants with aliases included.")
+aliases_adapted = pd.read_excel(OUTPUT_FOLDER+"aliases_adapted.xlsx", index_col=0, squeeze=True)
+applicants_aliased = la.aggregate_to_applicants(families, aliases=aliases_adapted)
+applicants_aliased.to_excel(OUTPUT_FOLDER+"applicants_aliased.xlsx")
+
 print(f"{datetime.now().time()}: Merging to applicants China.")
 applicants_in_china = la.aggregate_to_applicants(families_in_china)
 print(f"{datetime.now().time()}: Labeling applicants China.")

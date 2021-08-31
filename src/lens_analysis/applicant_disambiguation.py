@@ -8,46 +8,49 @@ import pandas as pd
 
 from .constants import *
 
-def guess_aliases(app_df, apps, custom_aliases={}):
+def guess_aliases(applicants_dataframe, applicants_to_alias, custom_aliases={}):
     """
     merge_apps: dict of key applicant
     with value a list of applicants to be merged
 
     """
-    AL_NAME = "Alias"
-    NM_NAME = "Name"
-    alias_sr = pd.Series(name=AL_NAME)
-    alias_sr.index.name = NM_NAME
+    SERIES_NAME = "Alias"
+    INDEX_NAME = "Name"
+
+    alias_series = pd.Series(name = SERIES_NAME)
+    alias_series.index.name = INDEX_NAME
+
+    company_forms = pd.read_excel(ALL_COMPANY_FORMS_FILENAME, index_col=0)
     
-    for app in apps:
-        joint_apps = app_df.loc[app, JPW_COL]
-        joint_apps = joint_apps.split(SEP)
+    for applicant in applicants_to_alias:
+        joint_applicants = applicants_dataframe.loc[applicant, JOINT_PATENTS_WITH_COL]
+        joint_applicants = joint_applicants.split(SEPARATOR)
 
         # occurs anywhere inside?
-        more_apps = find_extended_form_of_app(remove_common_terms(app),
-                                              app_df.index)
-        joint_apps += more_apps
+        more_applicants = find_extended_form_of_app(remove_common_terms(applicant, company_forms),
+            applicants_dataframe.index)
+        joint_applicants += more_applicants
         
         # check custom_alias:
-        if app in custom_aliases.keys():
-            custom_alias = custom_aliases[app]
-            app_name = normal_case(custom_alias)
-            more_apps = find_extended_form_of_app(custom_alias, app_df.index)
-            joint_apps += more_apps
+        if applicant in custom_aliases.keys():
+            custom_alias = custom_aliases[applicant]
+            applicant_name = normal_case(custom_alias)
+            more_applicants = find_extended_form_of_app(custom_alias, applicants_dataframe.index)
+            joint_applicants += more_applicants
         else:
-            app_name = normal_case(app)
+            applicant_name = normal_case(applicant)
         
-        joint_apps = sorted(set(joint_apps))
-        new_aliases = pd.Series(index=joint_apps, data=app_name,
-                                name=AL_NAME)
-        new_aliases.index.name = NM_NAME
+        joint_applicants = sorted(set(joint_applicants))
+        new_aliases = pd.Series(index=joint_applicants, data=applicant_name)
         
-        noverlap_ix = [ix for ix in new_aliases.index if ix not in alias_sr]
-        new_aliases = new_aliases.loc[noverlap_ix]
+        no_overlap_index = [ix for ix in new_aliases.index if ix not in alias_series]
+        new_aliases = new_aliases.loc[no_overlap_index]
+        new_aliases.name = SERIES_NAME
+        new_aliases.index.name = INDEX_NAME
         
-        alias_sr = alias_sr.append(new_aliases)
+        alias_series = alias_series.append(new_aliases)
         
-    return alias_sr
+    return alias_series
         
         
 def normal_case(s):
@@ -61,13 +64,12 @@ def normal_case(s):
 def find_extended_form_of_app(app_to_find, apps):
     return [app for app in apps if app_to_find in app]
 
-def remove_common_terms(app):
-    COMMON_TERMS = ["CO", "LTD", "INC", "CORP", "LLC", "BV"]
-    app_words = app.split(" ")
-    for term in COMMON_TERMS:
-        if term in app_words:
-            app_words.remove(term)
-    return " ".join(app_words)
+def remove_common_terms(applicant, common_terms):
+    applicant_words = applicant.split(" ")
+    for term in common_terms:
+        if term in applicant_words:
+            applicant_words.remove(term)
+    return " ".join(applicant_words)
     
         
         
