@@ -99,6 +99,7 @@ class CompressionFunction():
         
     def convert(self, dataframe):
         series = pd.Series(dtype="object")
+        
         for in_column_name, out_index_name in self.get_in_out_pairs(dataframe):
             series[out_index_name] = self.convert_one(dataframe, in_column_name)
 
@@ -106,7 +107,8 @@ class CompressionFunction():
 
     def convert_one(self, dataframe, in_column_name):
         if self.remove_duplicate_index:
-            dataframe = dataframe[~dataframe.index.duplicated(keep='first')]
+            dataframe = dataframe[~dataframe.index.copy().duplicated(keep='first')].copy()
+
         if self.is_weighted:
             if self.function == join_mean:
                 column = dataframe[in_column_name]*dataframe[self.weight_column_name]
