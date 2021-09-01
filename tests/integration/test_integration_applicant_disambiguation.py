@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from integration_context import lens_analysis, RESOURCES_FOLDER, OUTPUT_FOLDER, are_dataframes_equal
+from integration_context import lens_analysis, RESOURCES_FOLDER, OUTPUT_FOLDER, assert_dataframes_equal
 from lens_analysis import applicant_disambiguation as ad
 
 TEST_APPLICANTS = pd.read_excel(RESOURCES_FOLDER+"ai-and-nanotech-applicants.xlsx", index_col=0)

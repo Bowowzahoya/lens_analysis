@@ -24,6 +24,8 @@ def guess_aliases(applicants_dataframe, applicants_to_alias, custom_aliases={}):
     
     for applicant in applicants_to_alias:
         joint_applicants = applicants_dataframe.loc[applicant, JOINT_PATENTS_WITH_COL]
+        if not isinstance(joint_applicants, str):
+            continue
         joint_applicants = joint_applicants.split(SEPARATOR)
 
         # occurs anywhere inside?
@@ -62,6 +64,7 @@ def normal_case(s):
     return " ".join(words)
 
 def find_extended_form_of_app(app_to_find, apps):
+    apps = apps.fillna("")
     return [app for app in apps if app_to_find in app]
 
 def remove_common_terms(applicant, common_terms):

@@ -65,11 +65,12 @@ class CompressionFunction():
     If regex-pattern provided, will work on multiple columns
     """
     def __init__(self, function, in_column_name, out_index_name, 
-                weight_column_name=None):
+                weight_column_name=None, remove_duplicate_index=True):
         self.function = function
         self.in_column_name = in_column_name # can be string or regex-pattern
         self.out_index_name = out_index_name # can be string or function with input 'in_column_name' (must be if in_column_name is regex-pattern)
         self.weight_column_name = weight_column_name
+        self.remove_duplicate_index = remove_duplicate_index
 
     @property
     def is_weighted(self):
@@ -104,6 +105,8 @@ class CompressionFunction():
         return series
 
     def convert_one(self, dataframe, in_column_name):
+        if self.remove_duplicate_index:
+            dataframe = dataframe[~dataframe.index.duplicated(keep='first')]
         if self.is_weighted:
             if self.function == join_mean:
                 column = dataframe[in_column_name]*dataframe[self.weight_column_name]
@@ -213,16 +216,16 @@ APPLICANTS_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
     (join_most, JURISDICTIONS_COL, MAIN_JURISDICTION_COL),
     (join_set, PRIORITY_JURISDICTIONS_COL, PRIORITY_JURISDICTIONS_COL),
     (join_most, PRIORITY_JURISDICTIONS_COL, MAIN_PRIORITY_JURISDICTION_COL),
-    (join_mean, CITATION_SCORE_COL, MEAN_CITATION_SCORE_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL}),
-    (join_mean, MARKET_COVERAGE_COL, MEAN_MARKET_COVERAGE_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL}),
-    (join_mean, PATENT_POWER_COL, MEAN_PATENT_POWER_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL}),
-    (join_sum, WEIGHT_PER_APPLICANT_COL, FRACTIONAL_FAMILIES_COUNT_COL),
+    (join_mean, CITATION_SCORE_COL, MEAN_CITATION_SCORE_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL, "remove_duplicate_index":False}),
+    (join_mean, MARKET_COVERAGE_COL, MEAN_MARKET_COVERAGE_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL, "remove_duplicate_index":False}),
+    (join_mean, PATENT_POWER_COL, MEAN_PATENT_POWER_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL, "remove_duplicate_index":False}),
+    (join_sum, WEIGHT_PER_APPLICANT_COL, FRACTIONAL_FAMILIES_COUNT_COL, {"remove_duplicate_index": False}),
     (join_sum, IS_TOP_PATENT_COL, TOP_PATENTS_COL),
     (join_size_not_nan, IS_TOP_PATENT_COL, HAS_CITATION_SCORE_NUMBER_COL),
-    (join_sum, IS_TOP_PATENT_COL, FRACTIONAL_TOP_PATENTS_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL}),
-    (join_size_not_nan, IS_TOP_PATENT_COL, FRACTIONAL_HAS_CITATION_SCORE_NUMBER_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL}),
+    (join_sum, IS_TOP_PATENT_COL, FRACTIONAL_TOP_PATENTS_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL, "remove_duplicate_index":False}),
+    (join_size_not_nan, IS_TOP_PATENT_COL, FRACTIONAL_HAS_CITATION_SCORE_NUMBER_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL, "remove_duplicate_index":False}),
     (join_sum, YEARLY_AMOUNTS_COL_RE_PATTERN, lambda x: x),
-    (join_sum, YEARLY_AMOUNTS_COL_RE_PATTERN, lambda x: x+FRACTIONAL_COL_EXTENSION, {"weight_column_name": WEIGHT_PER_APPLICANT_COL})])
+    (join_sum, YEARLY_AMOUNTS_COL_RE_PATTERN, lambda x: x+FRACTIONAL_COL_EXTENSION, {"weight_column_name": WEIGHT_PER_APPLICANT_COL, "remove_duplicate_index":False})])
     
 APPLICANT_TYPES_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
     (join_mean, MEAN_CITATION_SCORE_COL, MEAN_CITATION_SCORE_COL, {"weight_column_name": FRACTIONAL_FAMILIES_COUNT_COL}),

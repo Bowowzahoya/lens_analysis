@@ -162,6 +162,15 @@ def test_compression_function_convert_one_weighted_size():
     value = compression_function.convert_one(df, "column in")
     assert value == 3
 
+def test_compression_function_convert_one_remove_duplicate_index_false():
+    df = pd.DataFrame({0:{"column in":5, "weight column":1}, 
+                    1:{"column in":2, "weight column":1}}).transpose()
+    df = df.append(pd.Series({"column in":3, "weight column":0.5}, name=0))
+    compression_function = ut.CompressionFunction(ut.join_sum, "column in", "column out", 
+                                                weight_column_name=None, remove_duplicate_index=False)
+    value = compression_function.convert_one(df, "column in")
+    assert value == 10
+
 def test_compression_function_convert_multiple():
     df = pd.DataFrame({0:{"2010":1, "2011":0, "weight column":1},
                     1:{"2010":0, "2011":1, "weight column":0.5},

@@ -18,7 +18,7 @@ import lens_analysis
 RESOURCES_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)),"res/")
 OUTPUT_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)),"out/")
 
-def are_dataframes_equal(df1, df2):
+def assert_dataframes_equal(df1, df2):
     assert all(df1.columns == df2.columns)
 
     assert len(df1) == len(df2)
