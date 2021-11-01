@@ -16,6 +16,7 @@ from datetime import datetime
 
 lens_export = pd.read_csv(RESOURCES_FOLDER+"invasive-species.csv", index_col=0)
 
+# First get patent families from Lens Export
 print(f"{datetime.now().time()}: Merging to families.")
 families = la.aggregate_to_family(lens_export)
 print(f"{datetime.now().time()}: Adding extra family information.")
@@ -28,9 +29,14 @@ chinese_jurisdiction_mask = families["Jurisdictions"].str.contains("CN")
 families_in_china = families.loc[chinese_jurisdiction_mask]
 families_in_china.to_excel(OUTPUT_FOLDER+"families_in_china.xlsx")
 
-families_in_rest = families.loc[~chinese_jurisdiction_mask]
-families_in_rest.to_excel(OUTPUT_FOLDER+"families_in_rest.xlsx")
+eu_jurisdiction_mask = families["Jurisdictions"].apply(lambda jurs: any([jur in jurs for jur in la.EU_JURISDICTIONS]))
+families_in_eu = families.loc[eu_jurisdiction_mask]
+families_in_eu.to_excel(OUTPUT_FOLDER+"families_in_eu.xlsx")
 
+families_out_china = families.loc[~chinese_jurisdiction_mask]
+families_out_china.to_excel(OUTPUT_FOLDER+"families_out_china.xlsx")
+
+# Merge families to applicants
 print(f"{datetime.now().time()}: Merging to applicants.")
 applicants = la.aggregate_to_applicants(families)
 applicants.to_excel(OUTPUT_FOLDER+"applicants.xlsx")
@@ -51,18 +57,27 @@ print(f"{datetime.now().time()}: Labeling applicants China.")
 applicants_in_china = la.add_labels(applicants_in_china)
 applicants_in_china.to_excel(OUTPUT_FOLDER+"applicants_in_china.xlsx")
 
+print(f"{datetime.now().time()}: Merging to applicants EU.")
+applicants_in_eu = la.aggregate_to_applicants(families_in_eu)
+print(f"{datetime.now().time()}: Labeling applicants EU.")
+applicants_in_eu = la.add_labels(applicants_in_eu)
+applicants_in_eu.to_excel(OUTPUT_FOLDER+"applicants_in_eu.xlsx")
 
-print(f"{datetime.now().time()}: Merging to applicants Rest of World.")
-applicants_in_rest = la.aggregate_to_applicants(families_in_rest)
-print(f"{datetime.now().time()}: Labeling applicants Rest of World.")
-applicants_in_rest = la.add_labels(applicants_in_rest)
-applicants_in_rest.to_excel(OUTPUT_FOLDER+"applicants_in_rest.xlsx")
+print(f"{datetime.now().time()}: Merging to applicants Outside China.")
+applicants_out_china = la.aggregate_to_applicants(families_out_china)
+print(f"{datetime.now().time()}: Labeling applicants Outside China.")
+applicants_out_china = la.add_labels(applicants_out_china)
+applicants_out_china.to_excel(OUTPUT_FOLDER+"applicants_out_china.xlsx")
 
-
+# Merge applicants to applicant types
 print(f"{datetime.now().time()}: Merging to applicant types China.")
 applicant_types_in_china = la.aggregate_to_applicant_types(applicants_in_china)
 applicant_types_in_china.to_excel(OUTPUT_FOLDER+"applicant_types_in_china.xlsx")
 
-print(f"{datetime.now().time()}: Merging to applicant types Rest of World.")
-applicant_types_in_rest = la.aggregate_to_applicant_types(applicants_in_rest)
-applicant_types_in_rest.to_excel(OUTPUT_FOLDER+"applicant_types_in_rest.xlsx")
+print(f"{datetime.now().time()}: Merging to applicant types EU.")
+applicant_types_in_eu = la.aggregate_to_applicant_types(applicants_in_eu)
+applicant_types_in_eu.to_excel(OUTPUT_FOLDER+"applicant_types_in_eu.xlsx")
+
+print(f"{datetime.now().time()}: Merging to applicant types Outside China.")
+applicant_types_out_china = la.aggregate_to_applicant_types(applicants_out_china)
+applicant_types_out_china.to_excel(OUTPUT_FOLDER+"applicant_types_out_china.xlsx")
