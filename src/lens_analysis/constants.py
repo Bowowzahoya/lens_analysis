@@ -71,7 +71,7 @@ REST_OF_WORLD_JURISDICTIONS = \
     "NR","NZ","OA","OM","PA","PE","PG","PH","PK","PW","PY","QA",
     "RS","RU","RW","SA","SB","SC","SD","SG","SL","SM","SN","SO",
     "SR","ST","SV","SY","SZ","TD","TG","TH","TJ","TL","TM","TN",
-    "TO","TP","TR","TT","TV","TZ","UA","UG","UY","UZ","VA","VC",
+    "TO","TP","TR","TT","TV","TW","TZ","UA","UG","UY","UZ","VA","VC",
     "VE","VN","VU","WS","YE","ZA","ZM","ZW"]
 
 
@@ -195,7 +195,7 @@ UNKNOWN_LABEL = "Unknown"
 CHINESE_LABEL = "Chinese"
 AMERICAN_LABEL = "American"
 EU_LABEL = "EU-27"
-NETHERLANDS_LABEL = "Dutch"
+NL_LABEL = "Dutch"
 REST_OF_WORLD_LABEL = "Rest of World"
 
 

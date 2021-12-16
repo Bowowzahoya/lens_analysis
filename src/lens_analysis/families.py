@@ -33,6 +33,7 @@ def aggregate_to_family(lens_export: pd.DataFrame, dataframe_compressor=FAMILIES
         families: DataFrame of patent families with as index the sorted priority numbers
     """
     # Needed because NL00918;;NL988 should be same family as NL988;;NL00918
+    lens_export[PRIORITY_NUMBERS_COL] = lens_export[PRIORITY_NUMBERS_COL].fillna("")
     lens_export[SORTED_PRIORITY_NUMBERS_COL] = lens_export[PRIORITY_NUMBERS_COL].apply(_sort_priority_numbers)
     
     groupby = lens_export.groupby(SORTED_PRIORITY_NUMBERS_COL)

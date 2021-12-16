@@ -85,6 +85,9 @@ class ApplicantTypeIdentifier():
 
 def main_priority_jurisdiction_equals(row, jurisdiction):
     return row[MAIN_PRIORITY_JURISDICTION_COL] == jurisdiction
+    
+def in_main_priority_jurisdiction(row, jurisdiction):
+    return jurisdiction in str(row[MAIN_PRIORITY_JURISDICTION_COL])
 
 def applicant_is_inventor(row, *args):
     return row[IS_INVENTOR_COL]
@@ -100,6 +103,17 @@ def applicant_contains_word(row, series_of_words):
     if not isinstance(applicant, str):
         return False
     return contains_word(applicant, series_of_words)
+    
+def applicant_in_series(row, series_of_applicants):
+    """
+    Fast method to check if applicant is contained in a series of
+    applicants
+    """
+    applicant = row.name
+    if not isinstance(applicant, str):
+        return False
+    return applicant in series_of_applicants.values
+
 
 def applicant_contains_string(row, series_of_strings):
     """
@@ -132,13 +146,13 @@ def applicant_has_string(row, series_of_strings):
 EU_ACADEMIA_IDENTIFIER = ApplicantTypeIdentifier(
     [applicant_has_string], [EU_ACADEMIA_FILENAME], args_are_filenames=True)
 EU_COMPANIES_IDENTIFIER = ApplicantTypeIdentifier(
-    [applicant_has_string], [EU_COMPANIES_FILENAME], args_are_filenames=True)
+    [applicant_contains_word], [EU_COMPANIES_FILENAME], args_are_filenames=True)
 EU_COMPANY_FORMS_IDENTIFIER = ApplicantTypeIdentifier(
-    [applicant_has_string], [EU_COMPANY_FORMS_FILENAME], args_are_filenames=True)
+    [applicant_ends_on_word], [EU_COMPANY_FORMS_FILENAME], args_are_filenames=True)
 EU_APPLICANTS_IDENTIFIER = ApplicantTypeIdentifier(
     [applicant_contains_word]*2, EU_GEOGRAPHICAL_FILENAMES, args_are_filenames=True)
 EU_JURISDICTION_IDENTIFIER = ApplicantTypeIdentifier(
-    [main_priority_jurisdiction_equals]*len(EU_JURISDICTIONS),EU_JURISDICTIONS, args_are_filenames=False)
+    [in_main_priority_jurisdiction]*len(EU_JURISDICTIONS),EU_JURISDICTIONS, args_are_filenames=False)
 CHINESE_ACADEMIA_IDENTIFIER = ApplicantTypeIdentifier(
     [applicant_has_string],[CHINESE_ACADEMIA_FILENAME], args_are_filenames=True)
 CHINESE_COMPANY_IDENTIFIER = ApplicantTypeIdentifier(
@@ -158,9 +172,9 @@ AMERICAN_JURISDICTION_IDENTIFIER = ApplicantTypeIdentifier(
 REST_OF_WORLD_ACADEMIA_IDENTIFIER = ApplicantTypeIdentifier(
     [applicant_has_string],[REST_OF_WORLD_ACADEMIA_FILENAME],args_are_filenames=True)
 REST_OF_WORLD_COMPANY_IDENTIFIER = ApplicantTypeIdentifier(
-    [applicant_has_string],[REST_OF_WORLD_COMPANIES_FILENAME],args_are_filenames=True)
+    [applicant_contains_word],[REST_OF_WORLD_COMPANIES_FILENAME],args_are_filenames=True)
 REST_OF_WORLD_COMPANY_FORMS_IDENTIFIER = ApplicantTypeIdentifier(
-    [applicant_contains_word],[REST_OF_WORLD_COMPANY_FORMS_FILENAME],args_are_filenames=True)
+    [applicant_ends_on_word],[REST_OF_WORLD_COMPANY_FORMS_FILENAME],args_are_filenames=True)
 REST_OF_WORLD_JURISDICTION_IDENTIFIER = ApplicantTypeIdentifier(
     [main_priority_jurisdiction_equals]*len(REST_OF_WORLD_JURISDICTIONS),REST_OF_WORLD_JURISDICTIONS, args_are_filenames=False)
 COMPANY_IDENTIFIER = ApplicantTypeIdentifier(
@@ -169,6 +183,15 @@ INDIVIDUAL_IDENTIFIER = ApplicantTypeIdentifier(
     [applicant_is_inventor])
 ACADEMIA_IDENTIFIER = ApplicantTypeIdentifier(
     [applicant_contains_word], [ALL_ACADEMIA_TERMS_FILENAME], args_are_filenames=True)
+    
+NL_APPLICANT_LABELER = ApplicantTypeIdentifier(
+    [applicant_in_series], [NETHERLANDS_APPLICANTS_FILENAME], args_are_filenames=True)
+NL_TAX_EVADER_LABELER = ApplicantTypeIdentifier(
+    [applicant_in_series], [NETHERLANDS_TAX_EVADERS_FILENAME], args_are_filenames=True)
+NL_TERMS_FILENAME = ApplicantTypeIdentifier(
+    [applicant_contains_word], [NETHERLANDS_TERMS_FILENAME], args_are_filenames=True)
+NL_JURISDICTION_IDENTIFIER = ApplicantTypeIdentifier(
+    [main_priority_jurisdiction_equals],[NL_JURISDICTION],args_are_filenames=False)
 
 EU_US_CHINA_LABELER = ApplicantTypeLabeler([
     (EU_ACADEMIA_IDENTIFIER, (EU_LABEL, ACADEMIA_LABEL)),
@@ -191,6 +214,12 @@ EU_US_CHINA_LABELER = ApplicantTypeLabeler([
     (COMPANY_IDENTIFIER, (UNKNOWN_LABEL, COMPANY_LABEL)),
     (ACADEMIA_IDENTIFIER, (UNKNOWN_LABEL, ACADEMIA_LABEL)),
     (INDIVIDUAL_IDENTIFIER, (UNKNOWN_LABEL, INDIVIDUAL_LABEL))])
+    
+NL_LABELER = ApplicantTypeLabeler([
+    (NL_TAX_EVADER_LABELER, (REST_OF_WORLD_LABEL, UNKNOWN_LABEL)),
+    (NL_APPLICANT_LABELER, (NL_LABEL, UNKNOWN_LABEL)),
+    (NL_JURISDICTION_IDENTIFIER, (NL_LABEL, UNKNOWN_LABEL)),
+    (NL_TERMS_FILENAME, (NL_LABEL, UNKNOWN_LABEL))])
 
 
 def aggregate_to_applicant_types(applicants: pd.DataFrame,
