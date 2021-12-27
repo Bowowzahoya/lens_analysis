@@ -15,8 +15,8 @@ applicants.to_excel(OUTPUT_FOLDER+"ai-and-nanotech-applicants.xlsx")
 applicants_aliased = ap.aggregate_to_applicants(TEST_FAMILIES, aliases=ALIASES_ADAPTED)
 applicants_aliased.to_excel(OUTPUT_FOLDER+"ai-and-nanotech-applicants_aliased.xlsx")
 
-def test_aggregate_to_families():
+def test_aggregate_to_applicants():
     assert_dataframes_equal(applicants, TEST_APPLICANTS)
 
-def test_aggregate_to_families_aliased():
+def test_aggregate_to_applicants_aliased():
     assert_dataframes_equal(applicants_aliased, TEST_APPLICANTS_ALIASED)

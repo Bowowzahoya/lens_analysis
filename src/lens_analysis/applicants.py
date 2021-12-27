@@ -44,6 +44,8 @@ def aggregate_to_applicants(families: pd.DataFrame,
     groupby = families.groupby(ALIASED_APPLICANT_COL)
 
     applicants = groupby.apply(join_columns, dataframe_compressor)
+    applicants[UNIQUE_INVENTORS_COL] = applicants[INVENTORS_COL].str.count(SEPARATOR)+1
+    applicants[INVENTORS_PER_PATENT_COL] = applicants[UNIQUE_INVENTORS_COL]/applicants[FAMILIES_COUNT_COL]
 
     applicants = _order_applicants_columns(applicants)
     applicants.sort_values(by=FRACTIONAL_FAMILIES_COUNT_COL, ascending=False, inplace=True)

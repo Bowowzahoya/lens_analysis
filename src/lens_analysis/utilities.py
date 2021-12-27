@@ -142,6 +142,11 @@ def join_set(col):
     all_vals = col.astype(str).str.split(SEPARATOR)
     return SEPARATOR.join(set(chain(*all_vals)))
 
+def join_set_len(col):
+    col = col.dropna()
+    all_vals = col.astype(str).str.split(SEPARATOR)
+    return len(set(chain(*all_vals)))
+
 def join_max(col):
     return col.max()
 
@@ -212,6 +217,7 @@ FAMILIES_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
 
 APPLICANTS_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
     (join_set, APPLICANTS_COL, JOINT_PATENTS_WITH_COL),
+    (join_set, INVENTORS_COL, INVENTORS_COL),
     (join_any, APPLICANT_IN_INVENTORS_COL, IS_INVENTOR_COL),
     (join_size, LENS_IDS_COL, FAMILIES_COUNT_COL),
     (join_set, JURISDICTIONS_COL, JURISDICTIONS_COL),
@@ -230,6 +236,7 @@ APPLICANTS_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
     (join_sum, YEARLY_AMOUNTS_COL_RE_PATTERN, lambda x: x+FRACTIONAL_COL_EXTENSION, {"weight_column_name": WEIGHT_PER_APPLICANT_COL, "remove_duplicate_index":False})])
     
 APPLICANT_TYPES_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
+    (join_set_len, INVENTORS_COL, UNIQUE_INVENTORS_COL),
     (join_mean, MEAN_CITATION_SCORE_COL, MEAN_CITATION_SCORE_COL, {"weight_column_name": FRACTIONAL_FAMILIES_COUNT_COL}),
     (join_mean, MEAN_MARKET_COVERAGE_COL, MEAN_MARKET_COVERAGE_COL, {"weight_column_name": FRACTIONAL_FAMILIES_COUNT_COL}),
     (join_mean, MEAN_PATENT_POWER_COL, MEAN_PATENT_POWER_COL, {"weight_column_name": FRACTIONAL_FAMILIES_COUNT_COL}),
