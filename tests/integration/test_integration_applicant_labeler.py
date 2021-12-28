@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from integration_context import lens_analysis, RESOURCES_FOLDER, OUTPUT_FOLDER, assert_dataframes_equal
+from integration_context import lens_analysis, RESOURCES_FOLDER, OUTPUT_FOLDER, dataframes_equal
 from lens_analysis import applicant_labeler as al
 
 TEST_APPLICANTS = pd.read_excel(RESOURCES_FOLDER+"ai-and-nanotech-applicants.xlsx", index_col=0)
@@ -12,11 +12,11 @@ applicants_labeled = al.add_labels(TEST_APPLICANTS)
 applicants_labeled.to_excel(OUTPUT_FOLDER+"ai-and-nanotech-applicants_labels.xlsx")
 
 def test_add_labels():
-    assert_dataframes_equal(applicants_labeled, TEST_APPLICANTS_LABELED)
+    assert dataframes_equal(applicants_labeled, TEST_APPLICANTS_LABELED)
 
 
 applicant_types = al.aggregate_to_applicant_types(TEST_APPLICANTS_LABELED)
 applicant_types.to_excel(OUTPUT_FOLDER+"ai-and-nanotech-applicant_types.xlsx")
 
 def test_aggregate_to_applicant_types():
-    assert_dataframes_equal(applicant_types, TEST_APPLICANT_TYPES)
+    assert dataframes_equal(applicant_types, TEST_APPLICANT_TYPES)

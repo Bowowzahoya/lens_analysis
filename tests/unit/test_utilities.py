@@ -10,6 +10,10 @@ COLUMN = pd.Series({0:np.nan, 1:"string1;;string1", 2:"string1;;string1", 3:"str
 COLUMN_NUMBERS = pd.Series({0:None, 1:3.5, 2:-1000, 3:1/3., 4:None, 5:1, 6:1, 7:2, 8:0})
 COLUMN_DATES = pd.Series({0:np.nan, 1:"2010-02-01", 2:"2010-02-01", 3:None, 4:"2012-02-01", 5:"2010-01-03"})
 COLUMN_NANS = pd.Series({0:np.nan})
+COLUMN_ABSTRACTS = pd.Series({0:"【課題】迅速にニューラルネットワークの最適パラメータを知ること。【解決手段】",
+1:"A chemical sensing system is described. The chemical sensing system can."})
+COLUMN_ABSTRACTS_NO_ENGLISH = pd.Series({0:"【課題】迅速にニューラルネットワークの最適パラメータを知ること。【解決手段】",
+1:"본 발명에 따른 머신러닝을 이용한 양자 얽힘 변환 방법은, "})
 
 TEST_DF = pd.DataFrame({1:{"text_col":"string1;;string1","number_col":1.5, "date_col":"2010-01-01"}, 
                         2:{"text_col":"string2;;string3","number_col":1.5, "date_col":"2011-01-01"},
@@ -24,6 +28,15 @@ def test_join():
 def test_join_first():
     joined_column = ut.join_first(COLUMN)
     assert joined_column == "string1;;string1"
+
+def test_join_first_english():
+    joined_column = ut.join_first_english(COLUMN_ABSTRACTS)
+    assert joined_column == "A chemical sensing system is described. The chemical sensing system can."
+
+def test_join_first_english_no_english():
+    joined_column = ut.join_first_english(COLUMN_ABSTRACTS_NO_ENGLISH)
+    print(joined_column)
+    assert np.isnan(joined_column)
 
 def test_join_set():
     joined_column = ut.join_set(COLUMN)
@@ -64,6 +77,10 @@ def test_join_nans():
 
 def test_join_first_nans():
     joined_column = ut.join_first(COLUMN_NANS)
+    assert np.isnan(joined_column)
+
+def test_join_first_english_nan():
+    joined_column = ut.join_first_english(COLUMN_NANS)
     assert np.isnan(joined_column)
 
 def test_join_set_nans():

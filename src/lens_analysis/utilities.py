@@ -137,6 +137,19 @@ def join_first(col):
         return np.nan
     return col.iloc[0]
 
+def join_first_english(col):
+    col = col.dropna()
+    if len(col) == 0:
+        return np.nan
+    
+    col_mask = col.apply(lambda el: contains_string(el, ENGLISH_IDENTIFIER_STRINGS))
+    col = col[col_mask]
+    if len(col) == 0:
+        return np.nan
+
+    return col.iloc[0]
+
+
 def join_set(col):
     col = col.dropna()
     all_vals = col.astype(str).str.split(SEPARATOR)
@@ -200,11 +213,11 @@ FAMILIES_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
     (join_earliest, APPLICATION_DATE_COL, EARLIEST_APPLICATION_DATE_COL),
     (join_earliest, EARLIEST_PRIORITY_DATE_COL, EARLIEST_PRIORITY_DATE_COL),
     (join_set, TITLE_COL, TITLES_COL),
-    (join_first, ABSTRACT_COL, FIRST_ABSTRACT_COL),
+    (join_first_english, ABSTRACT_COL, FIRST_ENGLISH_ABSTRACT_COL),
     (join_set, APPLICANTS_COL, APPLICANTS_COL),
     (join_set, INVENTORS_COL, INVENTORS_COL),
     (join_set, OWNERS_COL, OWNERS_COL),
-    (join_set, URL_COL, URLS_COL),
+    (join_first, URL_COL, FIRST_URL_COL),
     (join_set, DOCUMENT_TYPE_COL, DOCUMENT_TYPES_COL),
     (join_sum, CITES_PATENT_COUNT_COL, FAMILY_CITES_PATENT_COUNT_COL),
     (join_sum, CITED_PATENT_COUNT_COL, FAMILY_CITED_PATENT_COUNT_COL),

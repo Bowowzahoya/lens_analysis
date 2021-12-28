@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from integration_context import lens_analysis, RESOURCES_FOLDER, OUTPUT_FOLDER, assert_dataframes_equal
+from integration_context import lens_analysis, RESOURCES_FOLDER, OUTPUT_FOLDER, dataframes_equal
 from lens_analysis import applicants as ap
 
 TEST_FAMILIES = pd.read_excel(RESOURCES_FOLDER+"ai-and-nanotech-families.xlsx", index_col=0)
@@ -16,7 +16,7 @@ applicants_aliased = ap.aggregate_to_applicants(TEST_FAMILIES, aliases=ALIASES_A
 applicants_aliased.to_excel(OUTPUT_FOLDER+"ai-and-nanotech-applicants_aliased.xlsx")
 
 def test_aggregate_to_applicants():
-    assert_dataframes_equal(applicants, TEST_APPLICANTS)
+    assert dataframes_equal(applicants, TEST_APPLICANTS)
 
 def test_aggregate_to_applicants_aliased():
-    assert_dataframes_equal(applicants_aliased, TEST_APPLICANTS_ALIASED)
+    assert dataframes_equal(applicants_aliased, TEST_APPLICANTS_ALIASED)
