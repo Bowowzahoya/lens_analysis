@@ -5,7 +5,7 @@ setup(
     packages=find_packages(),
     url='https://github.com/Bowowzahoya/lens_analysis',
     description='Analysis of Lens patent exports',
-    long_description=open('README.text').read(),
+    long_description=open('README.txt').read(),
     install_requires=[
         "pandas",
         ],
