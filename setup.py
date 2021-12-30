@@ -2,7 +2,8 @@ from setuptools import setup, find_packages
 
 setup(
     name='lens_analysis',
-    packages=find_packages(),
+    packages=["lens_analysis"],
+    package_dir={"":"src"},
     url='https://github.com/Bowowzahoya/lens_analysis',
     description='Analysis of Lens patent exports',
     long_description=open('README.txt').read(),
