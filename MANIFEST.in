@@ -1,1 +1,2 @@
 include src/lens_analysis/res/*
+include src/lens_analysis/res/company_types/*
