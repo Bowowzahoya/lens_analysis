@@ -18,5 +18,9 @@ applicants_aliased.to_excel(OUTPUT_FOLDER+"ai-and-nanotech-applicants_aliased.xl
 def test_aggregate_to_applicants():
     assert dataframes_equal(applicants, TEST_APPLICANTS)
 
+test_aggregate_to_applicants()
+
 def test_aggregate_to_applicants_aliased():
     assert dataframes_equal(applicants_aliased, TEST_APPLICANTS_ALIASED)
+
+test_aggregate_to_applicants_aliased()

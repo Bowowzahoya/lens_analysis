@@ -34,8 +34,13 @@ def aggregate_to_applicants(families: pd.DataFrame,
     Returns:
         applicants: DataFrame of applicants with as index the applicant name (or aliased name if supplied)
     """
+    # to prevent year columns from becoming floats and not being recognized:
+    families = families.dropna(subset=[EARLIEST_PRIORITY_YEAR_COL]) 
+    families[EARLIEST_PRIORITY_YEAR_COL] =  families[EARLIEST_PRIORITY_YEAR_COL].astype(int)
+
     families = _ensure_string_columns_are_strings(families)
     families = families.join(_one_hot_encode_years(families))
+
     families = unfold_cell_overloaded_column(families, APPLICANTS_COL, APPLICANT_COL, separator=SEPARATOR)
 
     families[APPLICANT_IN_INVENTORS_COL] = families.apply(_get_applicant_in_inventors, axis=1)
