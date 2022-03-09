@@ -19,5 +19,3 @@ families_extended.to_excel(OUTPUT_FOLDER+"ai-and-nanotech-families.xlsx")
 
 def test_add_extra_family_information():
     assert dataframes_equal(families_extended, TEST_FAMILIES_EXTENDED)
-
-

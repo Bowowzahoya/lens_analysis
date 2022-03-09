@@ -36,7 +36,8 @@ class DataFrameCompressor():
     def convert(self, dataframe):
         series = pd.Series(dtype="object")
         for compression_function in self.compression_functions:
-            series = series.append(compression_function.convert(dataframe))
+            sr = compression_function.convert(dataframe)
+            series = series.append(sr)
         return series
 
     def update(self, compression_function):
@@ -58,85 +59,80 @@ class DataFrameCompressor():
 
 class CompressionFunction():
     """
-    Compresses a column in a DataFrame to a value using a specified function
+    Compresses a number of columns in a DataFrame to a series using a specified function
 
-    Can use weighted functions if 'weighted_column_name' is set
-
-    If regex-pattern provided, will work on multiple columns
+    If regex-pattern provided, it will work on multiple columns. Only the first column can have a regex.
     """
-    def __init__(self, function, in_column_name, out_index_name, 
-                weight_column_name=None, remove_duplicate_index=True):
+    def __init__(self, in_column_names, function, out_index_names, 
+                remove_duplicate_index=True):
         self.function = function
-        self.in_column_name = in_column_name # can be string or regex-pattern
-        self.out_index_name = out_index_name # can be string or function with input 'in_column_name' (must be if in_column_name is regex-pattern)
-        self.weight_column_name = weight_column_name
+        self.in_column_names = in_column_names # can be string or regex-pattern
+        self.out_index_names = out_index_names # can be string or function with input 'in_column_names' (must be if in_column_names has regex-patterns)
         self.remove_duplicate_index = remove_duplicate_index
 
     @property
-    def is_weighted(self):
-        return not isinstance(self.weight_column_name, type(None))
+    def in_columns_have_re_pattern(self):
+        return any([isinstance(col, re.Pattern) for col in self.in_column_names])
 
     @property
-    def in_column_is_re_pattern(self):
-        return isinstance(self.in_column_name, re.Pattern)
-
-    @property
-    def out_index_is_function(self):
-        return callable(self.out_index_name)
+    def out_indexes_have_function(self):
+        return any([callable(ix) for ix in self.out_index_names])
 
     def get_in_out_pairs(self, dataframe):
-        if self.in_column_is_re_pattern:
-            in_names = [col for col in dataframe.columns if bool(self.in_column_name.match(col))]
+        if self.in_columns_have_re_pattern:
+            in_names = [[col]+self.in_column_names[1:] for col in dataframe.columns if bool(self.in_column_names[0].match(col))]
         else:
-            in_names = [self.in_column_name]
+            in_names = [[col for col in self.in_column_names]]
 
-        if self.out_index_is_function:
-            out_names = [self.out_index_name(col) for col in in_names]
+        if self.out_indexes_have_function:
+            out_names = [[func(in_name) for func in self.out_index_names] for in_name in in_names]
         else:
-            out_names = [self.out_index_name]
-        
+            out_names = [[ix for ix in self.out_index_names]]
+
         return zip(in_names, out_names)
         
     def convert(self, dataframe):
         series = pd.Series(dtype="object")
-        
-        for in_column_name, out_index_name in self.get_in_out_pairs(dataframe):
-            series[out_index_name] = self.convert_one(dataframe, in_column_name)
+
+        for in_column_names, out_index_names in self.get_in_out_pairs(dataframe):
+            list_ = self.convert_one(dataframe, in_column_names)
+            series = series.append(pd.Series(list_, index=out_index_names))
 
         return series
 
-    def convert_one(self, dataframe, in_column_name):
+    def convert_one(self, dataframe, in_column_names):
         if self.remove_duplicate_index:
             dataframe = dataframe[~dataframe.index.copy().duplicated(keep='first')].copy()
 
-        if self.is_weighted:
-            if self.function == join_mean:
-                column = dataframe[in_column_name]*dataframe[self.weight_column_name]
-                nan_mask = dataframe[in_column_name].isna()
-                total_weight = dataframe.loc[~nan_mask, self.weight_column_name].sum()
-                return join_sum(column)/total_weight
-            elif self.function == join_sum:
-                column = dataframe[in_column_name]*dataframe[self.weight_column_name]
-                return self.function(column)
-            elif self.function == join_size_not_nan:
-                mask = dataframe[in_column_name].notna()
-                column = mask*dataframe[self.weight_column_name]
-                return join_sum(column)
-            else:
-                raise Exception(f"Can not do a weighted join with function {self.function}.")
-        else:
-            return self.function(dataframe[in_column_name])
+        return self.function(dataframe[in_column_names])
 
+# wrapper for functions that take a single Series and return a single value
+def single_argument_single_output(function):
+    def wrapper(dataframe):
+        series = dataframe[dataframe.columns[0]]
+        output = function(series)
+        return [output]
+    return wrapper
+
+def single_output(function):
+    def wrapper(dataframe):
+        output = function(dataframe)
+        return [output]
+    return wrapper
+
+@single_argument_single_output
 def join(col):
     col = col.dropna()
     return BIG_SEPARATOR.join(col.astype(str))
 
+@single_argument_single_output
 def join_first(col):
     col = col.dropna()
     if len(col) == 0:
         return np.nan
     return col.iloc[0]
 
+@single_argument_single_output
 def join_first_english(col):
     col = col.dropna()
     if len(col) == 0:
@@ -149,43 +145,75 @@ def join_first_english(col):
 
     return col.iloc[0]
 
-
+@single_argument_single_output
 def join_set(col):
     col = col.dropna()
     all_vals = col.astype(str).str.split(SEPARATOR)
     return SEPARATOR.join(set(chain(*all_vals)))
 
+@single_argument_single_output
 def join_set_len(col):
     col = col.dropna()
     all_vals = col.astype(str).str.split(SEPARATOR)
     return len(set(chain(*all_vals)))
 
+@single_argument_single_output
 def join_max(col):
     return col.max()
 
+@single_argument_single_output
 def join_sum(col):
     return col.sum()
 
+@single_output
+def join_sum_weighted(cols):
+    cols = cols.dropna()
+    value_column = cols.iloc[:, 0]
+    weight_column = cols.iloc[:, 1]
+    return (value_column*weight_column).sum()
+
+@single_argument_single_output
 def join_mean(col):
     return col.mean()
 
+@single_output
+def join_mean_weighted(cols):
+    cols = cols.dropna()
+    value_column = cols.iloc[:, 0]
+    weight_column = cols.iloc[:, 1]
+    return (value_column*weight_column).sum()/weight_column.sum()
+
+@single_argument_single_output
 def join_earliest(col):
     return col.sort_values().iloc[0]
 
+@single_argument_single_output
 def join_size(col):
     return len(col)
 
+@single_argument_single_output
 def join_any(col):
     return any(col)
 
+@single_argument_single_output
 def join_size_not_nan(col):
-    isna = col.isna().value_counts()
-    if False in isna.index:
+    is_na = col.isna().value_counts()
+    if False in is_na.index:
         return col.isna().value_counts()[False]
     else:
         return 0
 
+@single_output
+def join_size_not_nan_weighted(cols):
+    value_column = cols.iloc[:, 0]
+    weight_column = cols.iloc[:, 1]
+    not_na_mask = value_column.notna()
+    if not not_na_mask.any():
+        return 0
+    else:
+        return weight_column[not_na_mask].sum()
 
+@single_argument_single_output
 def join_most(column):
     """ 
     Will return value that occurs most often    
@@ -203,60 +231,61 @@ def get_mode_or_modes(list_):
     return [key for key, count in counter.items() if count == counter.most_common(1)[0][1]]
 
 FAMILIES_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
-    (join_set, JURISDICTION_COL, JURISDICTIONS_COL),
-    (join_set, KIND_COL, KINDS_COL),
-    (join_set, PUBLICATION_NUMBER_COL, PUBLICATION_NUMBERS_COL),
-    (join_set, LENS_ID_COL, LENS_IDS_COL),
-    (join_earliest, PUBLICATION_DATE_COL, EARLIEST_PUBLICATION_DATE_COL),
-    (join_earliest, PUBLICATION_YEAR_COL, EARLIEST_PUBLICATION_YEAR_COL),
-    (join_set, APPLICATION_NUMBER_COL, APPLICATION_NUMBERS_COL),
-    (join_earliest, APPLICATION_DATE_COL, EARLIEST_APPLICATION_DATE_COL),
-    (join_earliest, EARLIEST_PRIORITY_DATE_COL, EARLIEST_PRIORITY_DATE_COL),
-    (join_set, TITLE_COL, TITLES_COL),
-    (join_first_english, ABSTRACT_COL, FIRST_ENGLISH_ABSTRACT_COL),
-    (join_set, APPLICANTS_COL, APPLICANTS_COL),
-    (join_set, INVENTORS_COL, INVENTORS_COL),
-    (join_set, OWNERS_COL, OWNERS_COL),
-    (join_first, URL_COL, FIRST_URL_COL),
-    (join_set, DOCUMENT_TYPE_COL, DOCUMENT_TYPES_COL),
-    (join_sum, CITES_PATENT_COUNT_COL, FAMILY_CITES_PATENT_COUNT_COL),
-    (join_sum, CITED_PATENT_COUNT_COL, FAMILY_CITED_PATENT_COUNT_COL),
-    (join_max, SIMPLE_FAMILY_SIZE_COL, SIMPLE_FAMILY_SIZE_COL),
-    (join_max, EXTENDED_FAMILY_SIZE_COL, EXTENDED_FAMILY_SIZE_COL),
-    (join_set, CPC_CLASSIFICATIONS_COL, CPC_CLASSIFICATIONS_COL),
-    (join_set, IPCR_CLASSIFICATIONS_COL, IPCR_CLASSIFICATIONS_COL),
-    (join_set, US_CLASSIFICATIONS_COL, US_CLASSIFICATIONS_COL),
-    (join_size, HAS_FULL_TEXT_COL, INCLUDED_SIMPLE_FAMILY_SIZE_COL)])
+	([JURISDICTION_COL], join_set, [JURISDICTIONS_COL]),
+	([KIND_COL], join_set, [KINDS_COL]),
+	([PUBLICATION_NUMBER_COL], join_set, [PUBLICATION_NUMBERS_COL]),
+	([LENS_ID_COL], join_set, [LENS_IDS_COL]),
+	([PUBLICATION_DATE_COL], join_earliest, [EARLIEST_PUBLICATION_DATE_COL]),
+	([PUBLICATION_YEAR_COL], join_earliest, [EARLIEST_PUBLICATION_YEAR_COL]),
+	([APPLICATION_NUMBER_COL], join_set, [APPLICATION_NUMBERS_COL]),
+	([APPLICATION_DATE_COL], join_earliest, [EARLIEST_APPLICATION_DATE_COL]),
+	([EARLIEST_PRIORITY_DATE_COL], join_earliest, [EARLIEST_PRIORITY_DATE_COL]),
+	([TITLE_COL], join_set, [TITLES_COL]),
+	([ABSTRACT_COL], join_first_english, [FIRST_ENGLISH_ABSTRACT_COL]),
+	([APPLICANTS_COL], join_set, [APPLICANTS_COL]),
+	([INVENTORS_COL], join_set, [INVENTORS_COL]),
+	([OWNERS_COL], join_set, [OWNERS_COL]),
+	([URL_COL], join_first, [FIRST_URL_COL]),
+	([DOCUMENT_TYPE_COL], join_set, [DOCUMENT_TYPES_COL]),
+	([CITES_PATENT_COUNT_COL], join_sum, [FAMILY_CITES_PATENT_COUNT_COL]),
+	([CITED_PATENT_COUNT_COL], join_sum, [FAMILY_CITED_PATENT_COUNT_COL]),
+	([SIMPLE_FAMILY_SIZE_COL], join_max, [SIMPLE_FAMILY_SIZE_COL]),
+	([EXTENDED_FAMILY_SIZE_COL], join_max, [EXTENDED_FAMILY_SIZE_COL]),
+	([CPC_CLASSIFICATIONS_COL], join_set, [CPC_CLASSIFICATIONS_COL]),
+	([IPCR_CLASSIFICATIONS_COL], join_set, [IPCR_CLASSIFICATIONS_COL]),
+	([US_CLASSIFICATIONS_COL], join_set, [US_CLASSIFICATIONS_COL]),
+	([HAS_FULL_TEXT_COL], join_size, [INCLUDED_SIMPLE_FAMILY_SIZE_COL])])
 
 APPLICANTS_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
-    (join_set, APPLICANTS_COL, JOINT_PATENTS_WITH_COL),
-    (join_set, INVENTORS_COL, INVENTORS_COL),
-    (join_any, APPLICANT_IN_INVENTORS_COL, IS_INVENTOR_COL),
-    (join_size, LENS_IDS_COL, FAMILIES_COUNT_COL),
-    (join_set, JURISDICTIONS_COL, JURISDICTIONS_COL),
-    (join_most, JURISDICTIONS_COL, MAIN_JURISDICTION_COL),
-    (join_set, PRIORITY_JURISDICTIONS_COL, PRIORITY_JURISDICTIONS_COL),
-    (join_most, PRIORITY_JURISDICTIONS_COL, MAIN_PRIORITY_JURISDICTION_COL),
-    (join_mean, CITATION_SCORE_COL, MEAN_CITATION_SCORE_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL, "remove_duplicate_index":False}),
-    (join_mean, MARKET_COVERAGE_COL, MEAN_MARKET_COVERAGE_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL, "remove_duplicate_index":False}),
-    (join_mean, PATENT_POWER_COL, MEAN_PATENT_POWER_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL, "remove_duplicate_index":False}),
-    (join_sum, WEIGHT_PER_APPLICANT_COL, FRACTIONAL_FAMILIES_COUNT_COL, {"remove_duplicate_index": False}),
-    (join_sum, IS_TOP_PATENT_COL, TOP_PATENTS_COL),
-    (join_size_not_nan, IS_TOP_PATENT_COL, HAS_CITATION_SCORE_NUMBER_COL),
-    (join_sum, IS_TOP_PATENT_COL, FRACTIONAL_TOP_PATENTS_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL, "remove_duplicate_index":False}),
-    (join_size_not_nan, IS_TOP_PATENT_COL, FRACTIONAL_HAS_CITATION_SCORE_NUMBER_COL, {"weight_column_name": WEIGHT_PER_APPLICANT_COL, "remove_duplicate_index":False}),
-    (join_sum, YEARLY_AMOUNTS_COL_RE_PATTERN, lambda x: x),
-    (join_sum, YEARLY_AMOUNTS_COL_RE_PATTERN, lambda x: x+FRACTIONAL_COL_EXTENSION, {"weight_column_name": WEIGHT_PER_APPLICANT_COL, "remove_duplicate_index":False})])
-    
+	([APPLICANTS_COL], join_set, [JOINT_PATENTS_WITH_COL]),
+	([INVENTORS_COL], join_set, [INVENTORS_COL]),
+	([APPLICANT_IN_INVENTORS_COL], join_any, [IS_INVENTOR_COL]),
+	([LENS_IDS_COL], join_size, [FAMILIES_COUNT_COL]),
+	([JURISDICTIONS_COL], join_set, [JURISDICTIONS_COL]),
+	([JURISDICTIONS_COL], join_most, [MAIN_JURISDICTION_COL]),
+	([PRIORITY_JURISDICTIONS_COL], join_set, [PRIORITY_JURISDICTIONS_COL]),
+	([PRIORITY_JURISDICTIONS_COL], join_most, [MAIN_PRIORITY_JURISDICTION_COL]),
+	([CITATION_SCORE_COL, WEIGHT_PER_APPLICANT_COL], join_mean_weighted, [MEAN_CITATION_SCORE_COL], {"remove_duplicate_index":False}),
+	([MARKET_COVERAGE_COL, WEIGHT_PER_APPLICANT_COL], join_mean_weighted, [MEAN_MARKET_COVERAGE_COL], {"remove_duplicate_index":False}),
+	([PATENT_POWER_COL, WEIGHT_PER_APPLICANT_COL], join_mean_weighted, [MEAN_PATENT_POWER_COL], {"remove_duplicate_index":False}),
+	([WEIGHT_PER_APPLICANT_COL], join_sum, [FRACTIONAL_FAMILIES_COUNT_COL], {"remove_duplicate_index":False}),
+	([IS_TOP_PATENT_COL], join_sum, [TOP_PATENTS_COL]),
+	([IS_TOP_PATENT_COL], join_size_not_nan, [HAS_CITATION_SCORE_NUMBER_COL]),
+	([IS_TOP_PATENT_COL, WEIGHT_PER_APPLICANT_COL], join_sum_weighted, [FRACTIONAL_TOP_PATENTS_COL], {"remove_duplicate_index":False}),
+	([IS_TOP_PATENT_COL, WEIGHT_PER_APPLICANT_COL], join_size_not_nan_weighted, [FRACTIONAL_HAS_CITATION_SCORE_NUMBER_COL], {"remove_duplicate_index":False}),
+	([YEARLY_AMOUNTS_COL_RE_PATTERN], join_sum, [lambda cols: cols[0]]),
+	([YEARLY_AMOUNTS_COL_RE_PATTERN, WEIGHT_PER_APPLICANT_COL], join_sum_weighted, [lambda cols: cols[0]+FRACTIONAL_COL_EXTENSION], {"remove_duplicate_index":False})])
+	
 APPLICANT_TYPES_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
-    (join_set_len, INVENTORS_COL, UNIQUE_INVENTORS_COL),
-    (join_mean, MEAN_CITATION_SCORE_COL, MEAN_CITATION_SCORE_COL, {"weight_column_name": FRACTIONAL_FAMILIES_COUNT_COL}),
-    (join_mean, MEAN_MARKET_COVERAGE_COL, MEAN_MARKET_COVERAGE_COL, {"weight_column_name": FRACTIONAL_FAMILIES_COUNT_COL}),
-    (join_mean, MEAN_PATENT_POWER_COL, MEAN_PATENT_POWER_COL, {"weight_column_name": FRACTIONAL_FAMILIES_COUNT_COL}),
-    (join_sum, FRACTIONAL_FAMILIES_COUNT_COL, FRACTIONAL_FAMILIES_COUNT_COL),
-    (join_sum, FRACTIONAL_TOP_PATENTS_COL, FRACTIONAL_TOP_PATENTS_COL),
-    (join_sum, FRACTIONAL_HAS_CITATION_SCORE_NUMBER_COL, FRACTIONAL_HAS_CITATION_SCORE_NUMBER_COL),
-    (join_sum, FRACTIONAL_YEARLY_AMOUNTS_COL_RE_PATTERN, lambda x: x)])
+	([INVENTORS_COL], join_set_len, [UNIQUE_INVENTORS_COL]),
+	([MEAN_CITATION_SCORE_COL, FRACTIONAL_FAMILIES_COUNT_COL], join_mean_weighted, [MEAN_CITATION_SCORE_COL]),
+	([MEAN_MARKET_COVERAGE_COL, FRACTIONAL_FAMILIES_COUNT_COL], join_mean_weighted, [MEAN_MARKET_COVERAGE_COL]),
+	([MEAN_PATENT_POWER_COL, FRACTIONAL_FAMILIES_COUNT_COL], join_mean_weighted, [MEAN_PATENT_POWER_COL]),
+	([FRACTIONAL_FAMILIES_COUNT_COL], join_sum, [FRACTIONAL_FAMILIES_COUNT_COL]),
+	([FRACTIONAL_TOP_PATENTS_COL], join_sum, [FRACTIONAL_TOP_PATENTS_COL]),
+	([FRACTIONAL_HAS_CITATION_SCORE_NUMBER_COL], join_sum, [FRACTIONAL_HAS_CITATION_SCORE_NUMBER_COL]),
+	([FRACTIONAL_YEARLY_AMOUNTS_COL_RE_PATTERN], join_sum, [lambda cols: cols[0]])])
+
 
 # Applicant utilities
 def unfold_cell_overloaded_column(dataframe, in_column_name, out_column_name, separator=SEPARATOR):

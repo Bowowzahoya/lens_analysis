@@ -47,12 +47,14 @@ def aggregate_to_family(lens_export: pd.DataFrame, dataframe_compressor=FAMILIES
 def _sort_priority_numbers(priority_numbers: str):
     return SEPARATOR.join(sorted(priority_numbers.split(SEPARATOR)))
 
-def add_extra_family_information(families: pd.DataFrame):
+def add_extra_family_information(families: pd.DataFrame, citation_score_per_jurisdiction=True):
     families[EARLIEST_PRIORITY_YEAR_COL] = _get_years(families[EARLIEST_PRIORITY_DATE_COL])
 
     families[PRIORITY_JURISDICTIONS_COL] = families.index.map(_get_jurisdictions_from_numbers)
 
-    families[CITATION_SCORE_COL] = get_citation_score(families)
+    families[CITATION_SCORE_COL] = get_citation_score(families, 
+        citation_score_per_jurisdiction=citation_score_per_jurisdiction,
+        jurisdiction_column=JURISDICTIONS_COL)
 
     families[MARKET_COVERAGE_COL] = get_market_coverage(families)
 

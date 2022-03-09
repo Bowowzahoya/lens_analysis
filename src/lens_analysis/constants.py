@@ -124,9 +124,9 @@ FAMILIES_ORDERED_COLUMNS = [
 ]
 
 ENGLISH_IDENTIFIER_STRINGS = pd.Series([" The ", " the ", " THE ",
-    "To ", " to ", " TO ", 
     "Is ", " is ", " IS ", 
-    "Are ", " are ", " ARE "])
+    "Are ", " are ", " ARE ",
+    "And ", " and ", " AND "])
 
 # applicant self-defined column names
 FRACTIONAL_COL_EXTENSION = " (Fractionally Counted)"
@@ -209,6 +209,7 @@ APPLICANT_TYPES_FIXED_ORDERED_COLUMNS = [
     MEAN_CITATION_SCORE_COL, MEAN_MARKET_COVERAGE_COL, MEAN_PATENT_POWER_COL, INVENTORS_PER_PATENT_COL,
     FRACTIONAL_TOP_PATENTS_COL, FRACTIONAL_HAS_CITATION_SCORE_NUMBER_COL,
 ]
+
 
 
 

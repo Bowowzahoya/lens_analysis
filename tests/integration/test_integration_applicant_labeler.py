@@ -14,7 +14,6 @@ applicants_labeled.to_excel(OUTPUT_FOLDER+"ai-and-nanotech-applicants_labels.xls
 def test_add_labels():
     assert dataframes_equal(applicants_labeled, TEST_APPLICANTS_LABELED)
 
-
 applicant_types = al.aggregate_to_applicant_types(TEST_APPLICANTS_LABELED)
 applicant_types.to_excel(OUTPUT_FOLDER+"ai-and-nanotech-applicant_types.xlsx")
 

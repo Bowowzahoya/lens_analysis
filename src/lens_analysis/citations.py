@@ -28,12 +28,15 @@ import datetime as dt
 def get_citation_score(dataframe, 
         citation_column=FAMILY_CITED_PATENT_COUNT_COL, 
         year_column=EARLIEST_PUBLICATION_YEAR_COL,
+        jurisdiction_column=JURISDICTION_COL,
+        citation_score_per_jurisdiction=True,
         skip_years=[dt.date.today().year-2, dt.date.today().year-1, dt.date.today().year]):
-    # returns dataframe with column added (in place)
 
     mean_citations_per_year = dataframe.groupby(year_column)[citation_column].mean()
+    
 
     citation_scores = pd.Series(index=dataframe.index, dtype="object")
+    
     for year in mean_citations_per_year.index:
         if year in skip_years: continue
 
@@ -44,9 +47,6 @@ def get_citation_score(dataframe,
 
         citation_scores[dataframe.loc[mask].index] = citation_scores_sub
 
-    return citation_scores
-
-    
-    
+    return citation_scores   
     
     
