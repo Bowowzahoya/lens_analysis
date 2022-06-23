@@ -20,6 +20,12 @@ TEST_DF = pd.DataFrame({1:{"text_col":"string1;;string1","number_col":1.5, "date
                         3:{"text_col":"string1;;string1","number_col":None, "date_col":"2010-02-01"},
                         4:{"text_col":"string3","number_col":2, "date_col":"2010-01-15"}}).transpose()
 WEIGHTED_COLUMNS = pd.DataFrame({"value":{0:2, 1:3, 2:np.nan}, "weight":{0:0.5, 1:1, 2:1}})
+DICT_DF = pd.DataFrame({0:{"Citations":1, "Jurisdiction":"NL"}, 
+    1:{"Citations":3, "Jurisdiction":np.nan},
+    2:{"Citations":2, "Jurisdiction":"EP"},
+    3:{"Citations":1, "Jurisdiction":"CN"},
+    4:{"Citations":2, "Jurisdiction":"CN"},
+    5:{"Citations":np.nan, "Jurisdiction":"NL"}}).transpose()
 
 # test individual join functions
 def test_join():
@@ -127,6 +133,10 @@ def test_join_size_not_nan_nans():
     joined_columns = ut.join_size_not_nan(COLUMNS_NANS)
     assert joined_columns[0] == 0
 
+def test_join_dict_sum():
+    joined_columns = ut.join_dict_sum(DICT_DF[["Jurisdiction", "Citations"]])
+    assert joined_columns[0] == 'CN:3;;EP:2;;NL:1'
+
 # test join_columns and conversion functions
 def test_join_columns():
     dataframe_compressor = ut.DataFrameCompressor([\
@@ -149,8 +159,6 @@ def test_compression_function_get_in_out_pairs():
     in_out_pairs = list(compression_function.get_in_out_pairs(df))
     assert in_out_pairs[0] == (['2010'], ['2010 (fractionally counted)'])
     assert in_out_pairs[1] == (['2011'], ['2011 (fractionally counted)'])
-
-test_compression_function_get_in_out_pairs()
 
 def test_compression_function_convert_one():
     df = pd.DataFrame({0:{"column in":1, "weight column":1}, 

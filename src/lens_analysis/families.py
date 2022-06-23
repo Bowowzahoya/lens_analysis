@@ -53,8 +53,7 @@ def add_extra_family_information(families: pd.DataFrame, citation_score_per_juri
     families[PRIORITY_JURISDICTIONS_COL] = families.index.map(_get_jurisdictions_from_numbers)
 
     families[CITATION_SCORE_COL] = get_citation_score(families, 
-        citation_score_per_jurisdiction=citation_score_per_jurisdiction,
-        jurisdiction_column=JURISDICTIONS_COL)
+        citation_score_per_jurisdiction=citation_score_per_jurisdiction)
 
     families[MARKET_COVERAGE_COL] = get_market_coverage(families)
 

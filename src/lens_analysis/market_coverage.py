@@ -36,7 +36,8 @@ def _get_family_market_coverage(row, application_stage_penalty=0.7, wo_equivalen
     types = row[DOCUMENT_TYPES_COL]
     
     gdps = [_get_jurisdiction_gdps(jur, year) for jur in jurisdictions]
-    market_coverage = sum(gdps)/_get_jurisdiction_gdps(US_JURISDICTION, year)
+    try: market_coverage = sum(gdps)/_get_jurisdiction_gdps(US_JURISDICTION, year)
+    except ZeroDivisionError: market_coverage = sum(gdps)/_get_jurisdiction_gdps(US_JURISDICTION, 2010)
 
     if jurisdictions == [WO_JURISDICTION]:
         market_coverage = wo_equivalent

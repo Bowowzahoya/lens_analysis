@@ -66,8 +66,8 @@ class CompressionFunction():
     def __init__(self, in_column_names, function, out_index_names, 
                 remove_duplicate_index=True):
         self.function = function
-        self.in_column_names = in_column_names # can be string or regex-pattern
-        self.out_index_names = out_index_names # can be string or function with input 'in_column_names' (must be if in_column_names has regex-patterns)
+        self.in_column_names = in_column_names # can be strings or regex-pattern + strings
+        self.out_index_names = out_index_names # can be strings or functions with input 'in_column_names' (must be if in_column_names has regex-patterns)
         self.remove_duplicate_index = remove_duplicate_index
 
     @property
@@ -166,10 +166,10 @@ def join_sum(col):
     return col.sum()
 
 @single_output
-def join_sum_weighted(cols):
-    cols = cols.dropna()
-    value_column = cols.iloc[:, 0]
-    weight_column = cols.iloc[:, 1]
+def join_sum_weighted(df):
+    df = df.dropna()
+    value_column = df.iloc[:, 0]
+    weight_column = df.iloc[:, 1]
     return (value_column*weight_column).sum()
 
 @single_argument_single_output
@@ -177,10 +177,10 @@ def join_mean(col):
     return col.mean()
 
 @single_output
-def join_mean_weighted(cols):
-    cols = cols.dropna()
-    value_column = cols.iloc[:, 0]
-    weight_column = cols.iloc[:, 1]
+def join_mean_weighted(df):
+    df = df.dropna()
+    value_column = df.iloc[:, 0]
+    weight_column = df.iloc[:, 1]
     return (value_column*weight_column).sum()/weight_column.sum()
 
 @single_argument_single_output
@@ -204,9 +204,9 @@ def join_size_not_nan(col):
         return 0
 
 @single_output
-def join_size_not_nan_weighted(cols):
-    value_column = cols.iloc[:, 0]
-    weight_column = cols.iloc[:, 1]
+def join_size_not_nan_weighted(df):
+    value_column = df.iloc[:, 0]
+    weight_column = df.iloc[:, 1]
     not_na_mask = value_column.notna()
     if not not_na_mask.any():
         return 0
@@ -225,6 +225,13 @@ def join_most(column):
         return np.nan
     modes = get_mode_or_modes(all_values)
     return SEPARATOR.join(modes)
+
+@single_output
+def join_dict_sum(df):
+    df = df.dropna()
+    sr = df.groupby(df.columns[0])[df.columns[1]].sum()
+    return SEPARATOR.join([f"{ix}:{sr.loc[ix]}" for ix in sr.index])
+
 
 def get_mode_or_modes(list_):
     counter = Counter(list_)
@@ -249,6 +256,7 @@ FAMILIES_DEFAULT_DATAFRAME_COMPRESSOR = DataFrameCompressor([\
 	([DOCUMENT_TYPE_COL], join_set, [DOCUMENT_TYPES_COL]),
 	([CITES_PATENT_COUNT_COL], join_sum, [FAMILY_CITES_PATENT_COUNT_COL]),
 	([CITED_PATENT_COUNT_COL], join_sum, [FAMILY_CITED_PATENT_COUNT_COL]),
+    ([JURISDICTION_COL, CITED_PATENT_COUNT_COL], join_dict_sum, [CITED_PER_JURISDICTION_COL]),
 	([SIMPLE_FAMILY_SIZE_COL], join_max, [SIMPLE_FAMILY_SIZE_COL]),
 	([EXTENDED_FAMILY_SIZE_COL], join_max, [EXTENDED_FAMILY_SIZE_COL]),
 	([CPC_CLASSIFICATIONS_COL], join_set, [CPC_CLASSIFICATIONS_COL]),
