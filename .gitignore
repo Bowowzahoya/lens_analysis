@@ -5,3 +5,4 @@ tests/__pycache__/
 tests/unit/__pycache__/
 tests/integration/__pycache__/
 src/lens_analysis/__pycache__/
+lens_analysis.code-workspace
