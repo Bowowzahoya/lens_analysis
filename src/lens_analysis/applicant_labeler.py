@@ -184,14 +184,24 @@ INDIVIDUAL_IDENTIFIER = ApplicantTypeIdentifier(
 ACADEMIA_IDENTIFIER = ApplicantTypeIdentifier(
     [applicant_contains_word], [ALL_ACADEMIA_TERMS_FILENAME], args_are_filenames=True)
     
-NL_APPLICANT_LABELER = ApplicantTypeIdentifier(
+NL_APPLICANT_IDENTIFIER = ApplicantTypeIdentifier(
     [applicant_in_series], [NETHERLANDS_APPLICANTS_FILENAME], args_are_filenames=True)
-NL_TAX_EVADER_LABELER = ApplicantTypeIdentifier(
+NL_TAX_EVADER_IDENTIFIER = ApplicantTypeIdentifier(
     [applicant_in_series], [NETHERLANDS_TAX_EVADERS_FILENAME], args_are_filenames=True)
-NL_TERMS_FILENAME = ApplicantTypeIdentifier(
+NL_TERMS_IDENTIFIER = ApplicantTypeIdentifier(
     [applicant_contains_word], [NETHERLANDS_TERMS_FILENAME], args_are_filenames=True)
 NL_JURISDICTION_IDENTIFIER = ApplicantTypeIdentifier(
-    [main_priority_jurisdiction_equals],[NL_JURISDICTION],args_are_filenames=False)
+    [main_priority_jurisdiction_equals], [NL_JURISDICTION], args_are_filenames=False)
+
+TW_JURISDICTION_IDENTIFIER = ApplicantTypeIdentifier(
+    [main_priority_jurisdiction_equals], [TW_JURISDICTION], args_are_filenames=False)
+TW_ORGANIZATIONS_IDENTIFIER = ApplicantTypeIdentifier(
+    [applicant_in_series]*2, [TAIWAN_ORGANIZATIONS_FILENAME, TAIWAN_ORGANIZATIONS_ABROAD_FILENAME], args_are_filenames=True)
+TW_INDIVIDUALS_IDENTIFIER = ApplicantTypeIdentifier(
+    [applicant_in_series]*2, [TAIWAN_INDIVIDUALS_FILENAME, TAIWAN_INDIVIDUALS_PINYIN_FILENAME], args_are_filenames=True)
+TW_TERMS_IDENTIFIER = ApplicantTypeIdentifier(
+    [applicant_contains_word], [TAIWAN_TERMS_FILENAME], args_are_filenames=True)
+
 
 EU_US_CHINA_LABELER = ApplicantTypeLabeler([
     (EU_ACADEMIA_IDENTIFIER, (EU_LABEL, ACADEMIA_LABEL)),
@@ -216,10 +226,17 @@ EU_US_CHINA_LABELER = ApplicantTypeLabeler([
     (INDIVIDUAL_IDENTIFIER, (UNKNOWN_LABEL, INDIVIDUAL_LABEL))])
     
 NL_LABELER = ApplicantTypeLabeler([
-    (NL_TAX_EVADER_LABELER, (REST_OF_WORLD_LABEL, UNKNOWN_LABEL)),
-    (NL_APPLICANT_LABELER, (NL_LABEL, UNKNOWN_LABEL)),
+    (NL_TAX_EVADER_IDENTIFIER, (REST_OF_WORLD_LABEL, UNKNOWN_LABEL)),
+    (NL_APPLICANT_IDENTIFIER, (NL_LABEL, UNKNOWN_LABEL)),
     (NL_JURISDICTION_IDENTIFIER, (NL_LABEL, UNKNOWN_LABEL)),
-    (NL_TERMS_FILENAME, (NL_LABEL, UNKNOWN_LABEL))])
+    (NL_TERMS_IDENTIFIER, (NL_LABEL, UNKNOWN_LABEL))])
+
+TW_LABELER = ApplicantTypeLabeler([
+    (TW_ORGANIZATIONS_IDENTIFIER, (TW_LABEL, UNKNOWN_LABEL)),
+    (TW_INDIVIDUALS_IDENTIFIER, (TW_LABEL, UNKNOWN_LABEL)),
+    (TW_TERMS_IDENTIFIER, (TW_LABEL, UNKNOWN_LABEL)),
+    (TW_JURISDICTION_IDENTIFIER, (TW_LABEL, UNKNOWN_LABEL)),
+])
 
 
 def aggregate_to_applicant_types(applicants: pd.DataFrame,

@@ -35,6 +35,5 @@ def test_get_citation_score():
 def test_get_citation_score_per_jurisdiction():
     citation_scores = ct.get_citation_score(TEST_FAMILIES, skip_years=[2019,2020,2021], citation_score_per_jurisdiction=True)
     citation_scores.to_excel(OUTPUT_FOLDER+"citation scores.xlsx")
-    assert len(citation_scores.dropna()) == 185
-    assert round(citation_scores["CA 2018051224 W;;US 201762564734 P"], 2) == 0.93
-
+    assert len(citation_scores.dropna()) == 51
+    assert round(citation_scores["CN 201610872541 A"], 2) == 2.35
