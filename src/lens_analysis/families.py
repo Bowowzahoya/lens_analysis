@@ -39,7 +39,6 @@ def aggregate_to_family(lens_export: pd.DataFrame, dataframe_compressor=FAMILIES
     groupby = lens_export.groupby(SORTED_PRIORITY_NUMBERS_COL)
     
     families = groupby.apply(join_columns, dataframe_compressor)
-
     families = _order_families_columns(families)
 
     return families

@@ -45,6 +45,7 @@ RESOLVED_CITED_NPL_COUNT_COL = "NPL Resolved Citation Count"
 RESOLVED_CITED_NPL_LENS_IDS_COL = "NPL Resolved Lens ID(s)"
 RESOLVED_CITED_NPL_EXTERNAL_IDS_COL = "NPL Resolved External ID(s)"
 NPL_CITATIONS_COL = "NPL Citations"
+LEGAL_STATUS_COL = "Legal Status"
 
 # fixed export entries
 GRANTED_PATENT_ENTRY = "Granted Patent"
