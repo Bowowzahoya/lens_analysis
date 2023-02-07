@@ -17,7 +17,7 @@ def guess_aliases(applicants_dataframe, applicants_to_alias, custom_aliases={}):
     SERIES_NAME = "Alias"
     INDEX_NAME = "Name"
 
-    alias_series = pd.Series(name = SERIES_NAME)
+    alias_series = pd.Series(name = SERIES_NAME, dtype="object")
     alias_series.index.name = INDEX_NAME
 
     company_forms = pd.read_excel(ALL_COMPANY_FORMS_FILENAME, index_col=0)
@@ -50,7 +50,7 @@ def guess_aliases(applicants_dataframe, applicants_to_alias, custom_aliases={}):
         new_aliases.name = SERIES_NAME
         new_aliases.index.name = INDEX_NAME
         
-        alias_series = alias_series.append(new_aliases)
+        alias_series = pd.concat([alias_series, new_aliases])
         
     return alias_series
         

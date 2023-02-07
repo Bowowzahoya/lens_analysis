@@ -200,7 +200,8 @@ def test_compression_function_convert_one_weighted_size():
 def test_compression_function_convert_one_remove_duplicate_index_false():
     df = pd.DataFrame({0:{"column in":5, "weight column":1}, 
                     1:{"column in":2, "weight column":1}}).transpose()
-    df = df.append(pd.Series({"column in":3, "weight column":0.5}, name=0))
+    df = pd.concat([df, pd.DataFrame.from_records([{"column in":3, "weight column":0.5}])], axis=0)
+    print(df)
     compression_function = ut.CompressionFunction(["column in"], ut.join_sum, ["column out"], remove_duplicate_index=False)
     value = compression_function.convert_one(df, ["column in"])
     assert value[0] == 10
@@ -213,7 +214,8 @@ def test_compression_function_convert_multiple():
     column_out_function = lambda cols: cols[0]+" (fractionally counted)"
     compression_function = ut.CompressionFunction([column_in_pattern, "weight column"], ut.join_sum_weighted, [column_out_function])
     values = compression_function.convert(df)
-    assert all(values == pd.Series({"2010 (fractionally counted)":1, "2011 (fractionally counted)":1.5}))
+    print(values)
+    assert all(pd.Series(values) == pd.Series({"2010 (fractionally counted)":1, "2011 (fractionally counted)":1.5}))
 
 def test_dataframe_compressor_convert_weighted():
     df = pd.DataFrame({0:{"column in":5, "column in2":3, "weight column":1}, 
@@ -281,6 +283,7 @@ def test_unfold_cell_overloaded_column():
                     2:{"Applicants":"IBM UK", "Weight per Applicant":1},
                     3:{"Applicants":"TOMAHAWK INC", "Weight per Applicant":1}}).transpose()
     new_df = ut.unfold_cell_overloaded_column(df, "Applicants", "Applicant")
+    print(new_df)
     assert new_df.loc[1].size == 6
     assert new_df.loc[1, "Weight per Applicant"].sum() == 1
     assert all(new_df.loc[2] == pd.Series({"Applicants":"IBM UK", "Weight per Applicant":1, "Applicant":"IBM UK"}))

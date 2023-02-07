@@ -34,11 +34,12 @@ class DataFrameCompressor():
             self.update(compression_function)
     
     def convert(self, dataframe):
-        series = pd.Series(dtype="object")
+        compression_outputs = []
         for compression_function in self.compression_functions:
-            sr = compression_function.convert(dataframe)
-            series = series.append(sr)
-        return series
+            compression_outputs.append(compression_function.convert(dataframe))
+
+        compression_outputs_dict = {k:v for item in compression_outputs for (k,v) in item.items()}
+        return pd.Series(compression_outputs_dict)
 
     def update(self, compression_function):
         if isinstance(compression_function, CompressionFunction):
@@ -91,14 +92,14 @@ class CompressionFunction():
 
         return zip(in_names, out_names)
         
-    def convert(self, dataframe):
-        series = pd.Series(dtype="object")
+    def convert(self, dataframe) -> dict:
+        result_dicts = []
 
         for in_column_names, out_index_names in self.get_in_out_pairs(dataframe):
-            list_ = self.convert_one(dataframe, in_column_names)
-            series = series.append(pd.Series(list_, index=out_index_names))
+            result_list = self.convert_one(dataframe, in_column_names)
+            result_dicts.append({k:v for k,v in zip(out_index_names, result_list)})
 
-        return series
+        return {k:v for item in result_dicts for (k,v) in item.items()}
 
     def convert_one(self, dataframe, in_column_names):
         if self.remove_duplicate_index:
@@ -315,10 +316,10 @@ def unfold_cell_overloaded_column(dataframe, in_column_name, out_column_name, se
     for column in split_column.columns[1:]:
         new_cells = split_column[column].dropna()
 
-        new_rows = dataframe.loc[new_cells.index.dropna()].copy()
-        new_rows[out_column_name] = new_cells
+        new_rows_dataframe = dataframe.loc[new_cells.index.dropna()].copy()
+        new_rows_dataframe[out_column_name] = new_cells
 
-        new_dataframe = new_dataframe.append(new_rows)
+        new_dataframe = pd.concat([new_dataframe, new_rows_dataframe])
     return new_dataframe
 
 

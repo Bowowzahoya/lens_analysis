@@ -88,7 +88,8 @@ def _get_mean_citations_per_year_per_jurisdiction(dataframe,
         dataframe_in_year = dataframe[dataframe[year_column] == year]
         citation_counters = dataframe_in_year[CITED_PER_JURISDICTION_COL].apply(_get_citations_per_jurisdiction)
         document_counters = dataframe_in_year[JURISDICTIONS_COL].apply(_get_documents_per_jurisdiction)
-        citations_dict[year] = (pd.Series(citation_counters.sum())/pd.Series(document_counters.sum())).fillna(0)
+        citations_dict[year] = (pd.Series(citation_counters.sum(), dtype="float64")/\
+            pd.Series(document_counters.sum(), dtype="float64")).fillna(0)
     return citations_dict
 
 def _get_citations_per_jurisdiction(dict_string):

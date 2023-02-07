@@ -49,8 +49,6 @@ def test_get_is_top_patents_long():
     assert top_patents_number == 5
     assert non_top_patents_number == 46
 
-test_get_is_top_patents_long()
-
 def test_get_is_top_patents_short():
     patent_powers = pd.Series({1:2, 2:3})
     is_top_patents = fm._get_is_top_patents(patent_powers, top_percentage=0.1)

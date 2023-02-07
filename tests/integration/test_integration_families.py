@@ -14,7 +14,7 @@ families_raw.to_excel(OUTPUT_FOLDER+"ai-and-nanotech-families_not_extended.xlsx"
 def test_aggregate_to_family():
     assert dataframes_equal(families_raw, TEST_FAMILIES_RAW)
 
-families_extended = fm.add_extra_family_information(TEST_FAMILIES_RAW.copy())
+families_extended = fm.add_extra_family_information(TEST_FAMILIES_RAW.copy(), year_for_citations=2022)
 families_extended.to_excel(OUTPUT_FOLDER+"ai-and-nanotech-families.xlsx")
 
 def test_add_extra_family_information():
