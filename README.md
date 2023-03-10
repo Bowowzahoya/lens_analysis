@@ -11,14 +11,15 @@ e.g. Chinese companies, Chinese academia, American companies, EU-27 companies, e
 Normal usage would be to first aggregate an export to patent families, then aggregate to applicants (possibly with aliases for applicants that exist under different names/spelling), then possibly aggregate even further to count patents for particular applicant types.
 
 ### aggregate_to_family()
-Will group patent families together from a lens export (in pandas DataFrame format).
+Will group patent families together from a lens export (in pandas DataFrame format). 
 ```
 import pandas as pd
 lens_export = pd.read_csv("lens-export.csv", index_col=0)
 families = aggregate_to_family(lens_export)
 ```
+Note that the export will need to be "expanded by simple families" to make sure all documents belonging to each family are included.
 
-Note that these are a plain version of simple patent families in the sense of patent documents that strictly share the same priority numbers. This is slightly different from the DOCDB definition, which will allow for continuations or divisions of patents to be included in the family, even though they have only some of the priorities. For the DOCDB definition, see: https://www.epo.org/searching-for-patents/helpful-resources/first-time-here/patent-families/docdb.html#:~:text=A%20simple%20patent%20family%20is,have%20exactly%20the%20same%20priorities.
+Note that these are still a more plain version of simple patent families than the official DOCDB version. This is because sometimes non-relevant priority numbers for family formation purposes are included in the priority numbers column. WIPO (W) and non-priority (P) are excluded where possible, as are national application numbers next to priority numbers from another jurisdiction. However, in certain edge cases the family size is not the same as in Lens. In general the number of documents per family grouped will only be lower, and thus the number of simple families will be slightly higher using this package. For the DOCDB definition, see: https://www.epo.org/searching-for-patents/helpful-resources/first-time-here/patent-families/docdb.html#:~:text=A%20simple%20patent%20family%20is,have%20exactly%20the%20same%20priorities.
 
 ### add_extra_family_information()
 Will add extra columns with additional family information (such as citation scores, market coverage, etc.)

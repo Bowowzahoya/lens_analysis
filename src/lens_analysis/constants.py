@@ -77,6 +77,7 @@ REST_OF_WORLD_JURISDICTIONS = \
     "VE","VN","VU","WS","YE","ZA","ZM","ZW"]
 
 # families self-defined column names
+FAMILY_RELEVANT_PRIORITIES_COL = "Family Relevant Priority Numbers"
 JURISDICTIONS_COL = "Jurisdictions"
 KINDS_COL = "Kinds"
 GRANTED_JURISDICTIONS_COL = "Granted Jurisdictions"
@@ -126,11 +127,6 @@ FAMILIES_ORDERED_COLUMNS = [
     PUBLICATION_NUMBERS_COL, APPLICATION_NUMBERS_COL,
     WEIGHT_PER_APPLICANT_COL
 ]
-
-ENGLISH_IDENTIFIER_STRINGS = pd.Series([" The ", " the ", " THE ",
-    "Is ", " is ", " IS ", 
-    "Are ", " are ", " ARE ",
-    "And ", " and ", " AND "])
 
 # applicant self-defined column names
 FRACTIONAL_COL_EXTENSION = " (Fractionally Counted)"
@@ -220,6 +216,14 @@ APPLICANT_TYPES_FIXED_ORDERED_COLUMNS = [
     MEAN_CITATION_SCORE_COL, MEAN_MARKET_COVERAGE_COL, MEAN_PATENT_POWER_COL, INVENTORS_PER_PATENT_COL,
     FRACTIONAL_TOP_PATENTS_COL, FRACTIONAL_HAS_CITATION_SCORE_NUMBER_COL,
 ]
+
+# Other
+ENGLISH_IDENTIFIER_STRINGS = pd.Series([" The ", " the ", " THE ",
+    "Is ", " is ", " IS ", 
+    "Are ", " are ", " ARE ",
+    "And ", " and ", " AND "])
+PRIORITY_NUMBER_WIPO_EXTENSION = "W"
+PRIORITY_NUMBER_PRIORITY_EXTENSION = "P"
 
 
 

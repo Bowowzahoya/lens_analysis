@@ -33,16 +33,49 @@ def aggregate_to_family(lens_export: pd.DataFrame, dataframe_compressor=FAMILIES
     Returns:
         families: DataFrame of patent families with as index the sorted priority numbers
     """
-    # Needed because NL00918;;NL988 should be same family as NL988;;NL00918
     lens_export[PRIORITY_NUMBERS_COL] = lens_export[PRIORITY_NUMBERS_COL].fillna("")
-    lens_export[SORTED_PRIORITY_NUMBERS_COL] = lens_export[PRIORITY_NUMBERS_COL].apply(_sort_priority_numbers)
+    lens_export[PRIORITY_NUMBERS_COL] = lens_export[PRIORITY_NUMBERS_COL].astype(str)
+
+    lens_export = _add_family_relevant_priorities(lens_export)
     
-    groupby = lens_export.groupby(SORTED_PRIORITY_NUMBERS_COL)
+    groupby = lens_export.groupby(FAMILY_RELEVANT_PRIORITIES_COL)
     
     families = groupby.apply(join_columns, dataframe_compressor)
     families = _order_families_columns(families)
 
     return families
+
+def _add_family_relevant_priorities(lens_export: pd.DataFrame):
+    lens_export[FAMILY_RELEVANT_PRIORITIES_COL] = lens_export[PRIORITY_NUMBERS_COL].copy()
+    
+    lens_export[FAMILY_RELEVANT_PRIORITIES_COL] = lens_export[FAMILY_RELEVANT_PRIORITIES_COL].apply(_remove_w_priority_numbers)
+    lens_export[FAMILY_RELEVANT_PRIORITIES_COL] = lens_export[FAMILY_RELEVANT_PRIORITIES_COL].apply(_remove_non_p_priority_numbers)
+    lens_export[FAMILY_RELEVANT_PRIORITIES_COL] = lens_export.apply(_remove_second_jurisdiction_priorities, axis=1)
+    lens_export[FAMILY_RELEVANT_PRIORITIES_COL] = lens_export[FAMILY_RELEVANT_PRIORITIES_COL].apply(_sort_priority_numbers)
+    return lens_export
+
+def _remove_w_priority_numbers(priority_numbers):
+    new_priority_numbers = [p for p in priority_numbers.split(SEPARATOR) if len(p) > 1] # only if faulty data
+    new_priority_numbers = [p for p in new_priority_numbers if p[-1] != PRIORITY_NUMBER_WIPO_EXTENSION]
+    if new_priority_numbers == []: return priority_numbers
+    else: return SEPARATOR.join(new_priority_numbers)
+    
+def _remove_non_p_priority_numbers(priority_numbers):
+    new_priority_numbers = [p for p in priority_numbers.split(SEPARATOR) if len(p) > 1] # only if faulty data
+    new_priority_numbers = [p for p in new_priority_numbers if p[-1] == PRIORITY_NUMBER_PRIORITY_EXTENSION]
+    if new_priority_numbers == []: return priority_numbers
+    else: return SEPARATOR.join(new_priority_numbers)
+    
+def _remove_second_jurisdiction_priorities(row):
+    priority_numbers = row[FAMILY_RELEVANT_PRIORITIES_COL]
+    jurisdiction = row[JURISDICTION_COL]
+
+    new_priority_numbers = [p for p in priority_numbers.split(SEPARATOR) if len(p) > 2] # only if faulty data
+    priority_number_jurisdictions = set([p[:2] for p in new_priority_numbers])
+    if len(priority_number_jurisdictions) >= 2:
+        return SEPARATOR.join([p for p in new_priority_numbers if p[:2] != jurisdiction])
+    else:
+        return priority_numbers
 
 def _sort_priority_numbers(priority_numbers: str):
     return SEPARATOR.join(sorted(priority_numbers.split(SEPARATOR)))
@@ -96,6 +129,3 @@ def _order_families_columns(families):
     ordered_columns = [column for column in FAMILIES_ORDERED_COLUMNS if column in families.columns]
     families = families[ordered_columns]
     return families
-
-
-    

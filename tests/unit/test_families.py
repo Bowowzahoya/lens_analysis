@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 
-from context import lens_analysis, RESOURCES_FOLDER, OUTPUT_FOLDER
+from context import lens_analysis, RESOURCES_FOLDER, OUTPUT_FOLDER, dataframes_equal
 from lens_analysis import families as fm
 from lens_analysis.constants import SEPARATOR
 
@@ -69,3 +69,20 @@ def test_get_weight_per_applicant():
     assert weights_per_applicant[2] == 1
     assert weights_per_applicant[3] == 1
     assert np.isnan(weights_per_applicant[1])
+
+
+def test_add_family_relevant_priorities():
+    lens_export = pd.DataFrame({0:{"Priority Numbers":"US 2019055721 A;;US 2019055721 W", "Jurisdiction":"US"},
+        1:{"Priority Numbers":"US 2019055721 W;;US 2019055721 W", "Jurisdiction":"US"},
+        2:{"Priority Numbers":"US 2019055721 P;;US 2019055721 A", "Jurisdiction":"US"},
+        3:{"Priority Numbers":"CA 2019055721 W;;US 2019055721 W", "Jurisdiction":"CA"},
+        4:{"Priority Numbers":"CA 2019055721 W;;US 2019055721 W", "Jurisdiction":"EP"}}).transpose()
+    
+    expected_result = pd.DataFrame({0:{"Priority Numbers":"US 2019055721 A;;US 2019055721 W", "Jurisdiction":"US", "Family Relevant Priority Numbers":"US 2019055721 A"},
+        1:{"Priority Numbers":"US 2019055721 W;;US 2019055721 W", "Jurisdiction":"US", "Family Relevant Priority Numbers":"US 2019055721 W;;US 2019055721 W"},
+        2:{"Priority Numbers":"US 2019055721 P;;US 2019055721 A", "Jurisdiction":"US", "Family Relevant Priority Numbers":"US 2019055721 P"},
+        3:{"Priority Numbers":"CA 2019055721 W;;US 2019055721 W", "Jurisdiction":"CA", "Family Relevant Priority Numbers":"US 2019055721 W"},
+        4:{"Priority Numbers":"CA 2019055721 W;;US 2019055721 W", "Jurisdiction":"EP", "Family Relevant Priority Numbers":"CA 2019055721 W;;US 2019055721 W"}}).transpose()
+    result = fm._add_family_relevant_priorities(lens_export)
+
+    assert dataframes_equal(result, expected_result)
