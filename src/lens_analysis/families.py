@@ -14,6 +14,7 @@ can be calculated using 'add_extra_family_information()'
 import pandas as pd
 import numpy as np
 import datetime as dt
+from itertools import chain, combinations
 
 from lens_analysis.market_coverage import get_market_coverage
 from .constants import *
@@ -47,10 +48,10 @@ def aggregate_to_family(lens_export: pd.DataFrame, dataframe_compressor=FAMILIES
 
 def _add_family_relevant_priorities(lens_export: pd.DataFrame):
     lens_export[FAMILY_RELEVANT_PRIORITIES_COL] = lens_export[PRIORITY_NUMBERS_COL].copy()
-    
     lens_export[FAMILY_RELEVANT_PRIORITIES_COL] = lens_export[FAMILY_RELEVANT_PRIORITIES_COL].apply(_remove_w_priority_numbers)
     lens_export[FAMILY_RELEVANT_PRIORITIES_COL] = lens_export[FAMILY_RELEVANT_PRIORITIES_COL].apply(_remove_non_p_priority_numbers)
     lens_export[FAMILY_RELEVANT_PRIORITIES_COL] = lens_export.apply(_remove_second_jurisdiction_priorities, axis=1)
+    lens_export = _guess_relevant_priorities_for_imperfect_families(lens_export)
     lens_export[FAMILY_RELEVANT_PRIORITIES_COL] = lens_export[FAMILY_RELEVANT_PRIORITIES_COL].apply(_sort_priority_numbers)
     return lens_export
 
@@ -77,8 +78,51 @@ def _remove_second_jurisdiction_priorities(row):
     else:
         return priority_numbers
 
+def _guess_relevant_priorities_for_imperfect_families(lens_export, priority_numbers_col=FAMILY_RELEVANT_PRIORITIES_COL):
+    imperfect_families_index = _get_imperfect_families_index(lens_export, priority_numbers_col=priority_numbers_col)
+    lens_export_imperfect_families = lens_export.loc[imperfect_families_index]
+    lens_export_imperfect_families[FAMILY_IDENTIFYING_COMBINATION_COL] = \
+        lens_export_imperfect_families[SIMPLE_FAMILY_SIZE_COL].astype(str)+SEPARATOR+\
+        lens_export_imperfect_families[EXTENDED_FAMILY_SIZE_COL].astype(str)+SEPARATOR+\
+        lens_export_imperfect_families[EARLIEST_PRIORITY_DATE_COL].astype(str)
+    
+    for family_combination in lens_export_imperfect_families[FAMILY_IDENTIFYING_COMBINATION_COL].unique():
+        combination_mask = lens_export_imperfect_families[FAMILY_IDENTIFYING_COMBINATION_COL] == family_combination
+        lens_export_one_family_guess = lens_export_imperfect_families.loc[combination_mask]
+        
+        relevant_priorities = _guess_relevant_priorities_for_imperfect_family(lens_export_one_family_guess)
+        lens_export.loc[relevant_priorities.index, FAMILY_RELEVANT_PRIORITIES_COL] = relevant_priorities
+    return lens_export
+
+
+def _guess_relevant_priorities_for_imperfect_family(lens_export_one_family_guess):
+    priority_numbers = lens_export_one_family_guess[PRIORITY_NUMBERS_COL]
+    unique_priorities = set(chain(*[p.split(SEPARATOR) for p in priority_numbers]))
+    simple_family_size = lens_export_one_family_guess.iloc[0][SIMPLE_FAMILY_SIZE_COL]
+
+    if len(lens_export_one_family_guess) == simple_family_size:
+        relevant_priority_numbers = [p for p in unique_priorities if (priority_numbers.str.contains(p)).all()]
+        relevant_priority_numbers = SEPARATOR.join(relevant_priority_numbers)
+        return pd.Series(index=lens_export_one_family_guess.index, data=relevant_priority_numbers)
+    else:
+        # Can be implemented later but a bit of an edge case that multiple families left per combination
+        # of priority date, simple and extended family size that are not the right 
+        # calculated family size yet.
+        return priority_numbers
+
+def _get_imperfect_families_index(lens_export, priority_numbers_col=FAMILY_RELEVANT_PRIORITIES_COL):
+    lens_export[CALCULATED_FAMILY_SIZE_COL] = _get_calculated_family_size(lens_export[priority_numbers_col])
+    mask = lens_export[CALCULATED_FAMILY_SIZE_COL] != lens_export[SIMPLE_FAMILY_SIZE_COL]
+    return lens_export[mask].index
+
+def _get_calculated_family_size(priority_numbers: pd.Series):
+    value_counts = priority_numbers.value_counts()
+    return priority_numbers.apply(lambda p: value_counts[p])
+
 def _sort_priority_numbers(priority_numbers: str):
     return SEPARATOR.join(sorted(priority_numbers.split(SEPARATOR)))
+
+"""--------------------------------------------------------------------"""
 
 def add_extra_family_information(families: pd.DataFrame, citation_score_per_jurisdiction=True,
         year_for_citations=dt.date.today().year):

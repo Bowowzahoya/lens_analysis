@@ -35,9 +35,9 @@ def dataframes_equal(df1, df2):
         column2 = df2[column_name]
         if column.dtype == "object" and column2.dtype == "object":
             print("Testing objects")
-            lengths = column.fillna("").str.len()
+            lengths = column.astype(str).fillna("").str.len()
             lengths[lengths > 32767] = 32767 # maximum string length for pd.read_excel
-            test_lengths = df2[column_name].fillna("").str.len()
+            test_lengths = df2[column_name].astype(str).fillna("").str.len()
 
             if not (lengths == test_lengths).all(): 
                 print("Not equal")

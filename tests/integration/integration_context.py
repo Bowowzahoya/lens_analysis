@@ -38,7 +38,8 @@ def dataframes_equal(df1, df2):
             lengths = column.fillna("").str.len()
             lengths[lengths > 32767] = 32767 # maximum string length for pd.read_excel
             test_lengths = df2[column_name].fillna("").str.len()
-
+            print(lengths, test_lengths)
+            print(lengths==test_lengths)
             if not (lengths == test_lengths).all(): 
                 print("Not equal")
                 return False

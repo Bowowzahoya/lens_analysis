@@ -19,7 +19,7 @@ families = aggregate_to_family(lens_export)
 ```
 Note that the export will need to be "expanded by simple families" to make sure all documents belonging to each family are included.
 
-Note that these are still a more plain version of simple patent families than the official DOCDB version. This is because sometimes non-relevant priority numbers for family formation purposes are included in the priority numbers column. WIPO (W) and non-priority (P) are excluded where possible, as are national application numbers next to priority numbers from another jurisdiction. However, in certain edge cases the family size is not the same as in Lens. In general the number of documents per family grouped will only be lower, and thus the number of simple families will be slightly higher using this package. For the DOCDB definition, see: https://www.epo.org/searching-for-patents/helpful-resources/first-time-here/patent-families/docdb.html#:~:text=A%20simple%20patent%20family%20is,have%20exactly%20the%20same%20priorities.
+Note that identification of simple patent families is challenging. The function will mostly aggregate correctly, except for a few rare edge cases (large numbers of patents with similar priority numbers from different families, filed on the same date). Therefore numbers of simple patent families could be slightly different than listed on the Lens. For the DOCDB definition definition of a simple patent family, see: https://www.epo.org/searching-for-patents/helpful-resources/first-time-here/patent-families/docdb.html#:~:text=A%20simple%20patent%20family%20is,have%20exactly%20the%20same%20priorities.
 
 ### add_extra_family_information()
 Will add extra columns with additional family information (such as citation scores, market coverage, etc.)

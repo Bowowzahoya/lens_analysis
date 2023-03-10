@@ -8,7 +8,9 @@ from lens_analysis.constants import SEPARATOR
 
 
 TEST_LENS_EXPORT = pd.read_csv(RESOURCES_FOLDER+"lens-8-ai-and-nanotech.csv", index_col=0)
+TEST_LENS_EXPORT2 = pd.read_csv(RESOURCES_FOLDER+"didgeridoo-expanded.csv", index_col=0)
 TEST_FAMILIES = pd.read_excel(RESOURCES_FOLDER+"ai-and-nanotech-families.xlsx", index_col=0)
+
 def test_sort_priority_numbers():
     priority_numbers = "NL 0009810/0;;NL3429181;;NL389"
     output1 = fm._sort_priority_numbers(priority_numbers)
@@ -70,19 +72,28 @@ def test_get_weight_per_applicant():
     assert weights_per_applicant[3] == 1
     assert np.isnan(weights_per_applicant[1])
 
-
-def test_add_family_relevant_priorities():
-    lens_export = pd.DataFrame({0:{"Priority Numbers":"US 2019055721 A;;US 2019055721 W", "Jurisdiction":"US"},
-        1:{"Priority Numbers":"US 2019055721 W;;US 2019055721 W", "Jurisdiction":"US"},
-        2:{"Priority Numbers":"US 2019055721 P;;US 2019055721 A", "Jurisdiction":"US"},
-        3:{"Priority Numbers":"CA 2019055721 W;;US 2019055721 W", "Jurisdiction":"CA"},
-        4:{"Priority Numbers":"CA 2019055721 W;;US 2019055721 W", "Jurisdiction":"EP"}}).transpose()
+def test_get_calculated_family_size():
     
-    expected_result = pd.DataFrame({0:{"Priority Numbers":"US 2019055721 A;;US 2019055721 W", "Jurisdiction":"US", "Family Relevant Priority Numbers":"US 2019055721 A"},
-        1:{"Priority Numbers":"US 2019055721 W;;US 2019055721 W", "Jurisdiction":"US", "Family Relevant Priority Numbers":"US 2019055721 W;;US 2019055721 W"},
-        2:{"Priority Numbers":"US 2019055721 P;;US 2019055721 A", "Jurisdiction":"US", "Family Relevant Priority Numbers":"US 2019055721 P"},
-        3:{"Priority Numbers":"CA 2019055721 W;;US 2019055721 W", "Jurisdiction":"CA", "Family Relevant Priority Numbers":"US 2019055721 W"},
-        4:{"Priority Numbers":"CA 2019055721 W;;US 2019055721 W", "Jurisdiction":"EP", "Family Relevant Priority Numbers":"CA 2019055721 W;;US 2019055721 W"}}).transpose()
-    result = fm._add_family_relevant_priorities(lens_export)
+    sizes = fm._get_calculated_family_size(TEST_LENS_EXPORT2["Priority Numbers"])
+    assert sizes[1] == 2
+    assert sizes[2] == 1
 
-    assert dataframes_equal(result, expected_result)
+def test_get_imperfect_families_index():
+    perfect_index = fm._get_imperfect_families_index(TEST_LENS_EXPORT2, priority_numbers_col="Priority Numbers")
+    assert 2 not in perfect_index
+    assert 1 in perfect_index
+    assert 17 in perfect_index
+
+def test_guess_relevant_priorities_for_imperfect_families():
+    df = fm._guess_relevant_priorities_for_imperfect_families(TEST_LENS_EXPORT2, priority_numbers_col="Priority Numbers")
+    assert df.loc[6, "Family Relevant Priority Numbers"] == "GB 9812315 A"
+
+def test_guess_relevant_priorities_for_imperfect_family_one_family():
+    df = pd.DataFrame({0:{"Priority Numbers":"AU 2001/063561 A;;AU PQ971400 A;;AU 2004/002000 W", "Family Relevant Priority Numbers":"AU 2001/063561 A;;AU PQ971400 A", "Simple Family Size":3},
+        1:{"Priority Numbers":"AU 2004/002000 W", "Family Relevant Priority Numbers":"AU 2004/002000 W", "Simple Family Size":3},
+        2:{"Priority Numbers":"AU 2001/063561 A;;AU PQ971400 A;;AU 2004/002000 W", "Family Relevant Priority Numbers":"AU 2001/063561 A;;AU PQ971400 A", "Simple Family Size":3}}).transpose()
+    
+    relevant_priority_numbers = fm._guess_relevant_priorities_for_imperfect_family(df)
+    assert (relevant_priority_numbers == "AU 2004/002000 W").all()
+
+
